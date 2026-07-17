@@ -91,25 +91,40 @@ const viewportSize = reactive({
 const currentEvent = computed(() => events.value.find((event) => event.id === activeId.value));
 const isLandscapeLayout = computed(() => viewportSize.width >= viewportSize.height);
 const mainStageStyle = computed(() => {
-  const safeGap = 0;
-  const availableWidth = Math.max(1, viewportSize.width - safeGap * 2);
-  const availableHeight = Math.max(1, viewportSize.height - safeGap * 2);
-  const scale = Math.max(0.1, isLandscapeLayout.value ? availableHeight / 700 : availableWidth / 720);
+  if (!isLandscapeLayout.value) {
+    return {
+      "--main-layout-width": "100%",
+      "--main-layout-height": "auto",
+      "--main-layout-scale": "1",
+    };
+  }
+
+  const availableWidth = Math.max(1, viewportSize.width);
+  const availableHeight = Math.max(1, viewportSize.height);
+  const scale = Math.max(0.1, availableHeight / 700);
   const designWidth = availableWidth / scale;
   return {
     "--main-layout-width": `${designWidth}px`,
-    "--main-layout-height": isLandscapeLayout.value ? `700px` : "auto",
+    "--main-layout-height": "700px",
     "--main-layout-scale": scale.toFixed(4),
   };
 });
 const setupStageStyle = computed(() => {
+  if (!isLandscapeLayout.value) {
+    return {
+      "--setup-layout-width": "100%",
+      "--setup-layout-height": "100%",
+      "--setup-layout-scale": "1",
+    };
+  }
+
   const availableWidth = Math.max(1, viewportSize.width);
   const availableHeight = Math.max(1, viewportSize.height);
-  const scale = Math.max(0.1, isLandscapeLayout.value ? availableHeight / 650 : availableWidth / 560);
+  const scale = Math.max(0.1, availableHeight / 650);
   const designWidth = availableWidth / scale;
   return {
     "--setup-layout-width": `${designWidth}px`,
-    "--setup-layout-height": isLandscapeLayout.value ? `650px` : "auto",
+    "--setup-layout-height": "650px",
     "--setup-layout-scale": scale.toFixed(4),
   };
 });

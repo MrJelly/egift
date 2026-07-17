@@ -1,6 +1,16 @@
-.main-stage {
+/* Responsive layout rules
+   The base components define the visual language. This file only owns
+   viewport layout, sizing and scroll ownership so each breakpoint has one
+   predictable source of truth. */
+
+:root,
+html,
+body,
+#app {
   width: 100%;
   min-width: 0;
+  min-height: 100%;
+  margin: 0;
 }
 
 html,
@@ -9,154 +19,76 @@ body,
   overflow: hidden;
 }
 
-html:has(.scaled-portrait),
-body:has(.scaled-portrait),
-#app:has(.scaled-portrait),
-html:has(.setup-portrait),
-body:has(.setup-portrait),
-#app:has(.setup-portrait),
-html:has(.guest-portrait),
-body:has(.guest-portrait),
-#app:has(.guest-portrait) {
-  overflow: visible !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  height: auto !important;
-  min-height: 100% !important;
+* {
+  box-sizing: border-box;
 }
 
-.scaled-setup,
-.scaled-setup .setup-card,
-.main-stage.scaled-layout,
-.scaled-layout .main-screen,
-.scaled-layout .workspace-grid,
-.scaled-layout .entry-panel,
-.scaled-layout .book-frame,
-.scaled-layout .ledger-scroll {
-  overflow: hidden !important;
-  scrollbar-width: none;
-  scrollbar-gutter: auto !important;
-}
-
-.scaled-setup::-webkit-scrollbar,
-.scaled-setup .setup-card::-webkit-scrollbar,
-.main-stage.scaled-layout::-webkit-scrollbar,
-.scaled-layout .main-screen::-webkit-scrollbar,
-.scaled-layout .workspace-grid::-webkit-scrollbar,
-.scaled-layout .entry-panel::-webkit-scrollbar,
-.scaled-layout .book-frame::-webkit-scrollbar,
-.scaled-layout .ledger-scroll::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
-}
-
-.scaled-layout textarea {
-  resize: none;
-}
-
-/* Every responsive module must be allowed to shrink inside its grid cell.
-   Without these guards, form controls and toolbar text can enlarge the grid
-   track and push the right edge outside a narrow viewport. */
-.scaled-layout .main-screen,
-.scaled-layout .workspace-grid,
-.scaled-layout .entry-panel,
-.scaled-layout .entry-panel form,
-.scaled-layout .tools,
-.scaled-layout .book-frame,
-.scaled-layout .book-toolbar,
-.scaled-layout .ledger-scroll,
-.scaled-layout .ledger-sheet {
-  width: 100%;
+button,
+input,
+select,
+textarea {
   min-width: 0;
   max-width: 100%;
 }
 
-.scaled-layout input,
-.scaled-layout select,
-.scaled-layout textarea,
-.scaled-layout button,
-.scaled-layout label,
-.scaled-layout .methods,
-.scaled-layout .remark-buttons,
-.scaled-layout .pager {
-  min-width: 0;
-  max-width: 100%;
-}
-
-.scaled-layout .methods,
-.scaled-layout .remark-buttons {
-  flex-wrap: wrap;
-  white-space: normal;
-}
-
-.pro-app:has(.scaled-setup) {
-  position: relative;
-  display: block;
+.pro-app {
   width: 100%;
-  height: 100vh;
   height: 100dvh;
   min-height: 0;
-  padding: 0;
+  padding: clamp(12px, 2.2vw, 30px);
   overflow: hidden;
 }
 
+/* Setup screen ---------------------------------------------------------- */
 .setup-screen.scaled-setup {
-  position: absolute;
-  top: 0;
-  left: 0;
-  flex: none;
-  width: var(--setup-layout-width) !important;
-  height: var(--setup-layout-height) !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  margin: 0;
-  transform: scale(var(--setup-layout-scale));
-  transform-origin: top left;
+  position: relative;
+  width: min(100%, 960px);
+  height: min(720px, calc(100dvh - 32px));
+  min-height: 0;
+  margin: auto;
+  overflow: hidden;
+  transform: none;
   container-type: size;
 }
 
-.scaled-setup .setup-brand,
-.scaled-setup .setup-card {
-  width: 100% !important;
-  height: 100% !important;
-  min-width: 0 !important;
-  min-height: 0 !important;
-  max-height: none !important;
+.setup-screen.scaled-setup.setup-landscape {
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: var(--setup-layout-width);
+  height: var(--setup-layout-height);
+  display: grid;
+  grid-template-columns: 34% minmax(0, 66%);
+  transform: scale(var(--setup-layout-scale));
+  transform-origin: top left;
 }
 
-.scaled-setup .setup-card {
-  justify-content: center;
+.setup-landscape .setup-brand,
+.setup-landscape .setup-card {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.setup-landscape .setup-brand {
   overflow: hidden;
 }
 
-.scaled-setup .event-entry-row,
-.scaled-setup .create-event,
-.scaled-setup .two,
-.scaled-setup input,
-.scaled-setup select,
-.scaled-setup button {
-  min-width: 0;
-  max-width: 100%;
-}
-
-.setup-landscape {
-  display: grid;
-  grid-template-columns: 34% minmax(0, 66%);
-}
-
 .setup-landscape .setup-card {
-  padding: 2.4cqw 3.8cqw;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 3.2cqw 4cqw;
+  scrollbar-width: thin;
 }
 
 .setup-landscape .setup-title {
-  margin-bottom: 1.2cqw;
+  margin-bottom: 1.6cqw;
   font-size: 2.8cqw;
 }
 
 .setup-landscape .setup-card h2 {
-  margin-bottom: .8cqw;
-  padding-bottom: .65cqw;
+  margin-bottom: 0.9cqw;
+  padding-bottom: 0.7cqw;
   font-size: 1.9cqw;
 }
 
@@ -165,194 +97,130 @@ body:has(.guest-portrait),
 }
 
 .setup-landscape .event-entry-row {
-  grid-template-columns: minmax(0, 1fr) 8.8cqw;
-  gap: .8cqw;
+  grid-template-columns: minmax(0, 1fr) 8.5cqw;
+  gap: 0.9cqw;
 }
 
 .setup-landscape .setup-card input,
 .setup-landscape .setup-card select,
 .setup-landscape .event-entry-row button,
 .setup-landscape .create-event > button {
-  min-height: 4.7cqw;
-  padding: .8cqw 1.1cqw;
+  min-height: 4.8cqw;
+  padding: 0.8cqw 1.1cqw;
 }
 
-.setup-landscape .create-event {
-  gap: .9cqw;
-}
-
+.setup-landscape .create-event,
 .setup-landscape .two {
-  gap: .8cqw;
+  gap: 0.9cqw;
 }
 
 .setup-landscape .two input {
-  margin-top: .4cqw;
+  margin-top: 0.4cqw;
 }
 
 .setup-landscape .create-event details {
-  padding: .8cqw;
+  padding: 0.9cqw;
 }
 
-.setup-portrait {
-  display: grid;
-  grid-template-columns: 1fr;
-  /* The cover is decorative; keep it compact and reserve the rest of the
-     viewport for the complete setup form. */
-  grid-template-rows: 50cqw minmax(0, 1fr);
-}
-
-/* Portrait setup is a real viewport-width flow, not a transformed desktop
-   canvas. This prevents the select/button row and native date inputs from
-   increasing the layout viewport beyond the device width. */
 .setup-screen.scaled-setup.setup-portrait {
   position: relative;
-  top: auto;
-  left: auto;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: 32% auto;
-  width: 100vw !important;
-  min-width: 0 !important;
-  max-width: 100vw !important;
-  height: 100vh !important;
-  height: 100dvh !important;
+  inset: auto;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
   margin: 0;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
+  overflow-x: hidden;
+  overflow-y: auto;
   transform: none;
-  container-type: inline-size;
   scrollbar-width: thin;
   scrollbar-color: #9aa0a6 transparent;
 }
 
-.setup-screen.scaled-setup.setup-portrait::-webkit-scrollbar {
-  display: block;
-  width: 4px;
-  height: 0;
-}
-
-.setup-screen.scaled-setup.setup-portrait::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.setup-screen.scaled-setup.setup-portrait::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: #9aa0a6;
-}
-
 .setup-portrait .setup-brand {
-  display: block;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: 100% !important;
-  height: 100% !important;
+  display: none;
 }
 
 .setup-portrait .setup-card {
-  width: 94% !important;
-  min-width: 0 !important;
-  max-width: 94% !important;
-  height: auto !important;
-  margin-inline: auto;
-  padding: 4%;
+  width: min(94%, 620px);
+  height: auto;
+  min-height: 0;
+  margin: 0 auto;
+  padding: clamp(24px, 5vw, 44px) clamp(18px, 5vw, 44px);
   justify-content: flex-start;
-  overflow: visible !important;
+  overflow: visible;
 }
 
 .setup-portrait .setup-title {
-  margin-bottom: 2cqw;
-  font-size: 4.5cqw;
+  margin-bottom: clamp(18px, 4vw, 26px);
+  font-size: clamp(24px, 6vw, 30px);
 }
 
 .setup-portrait .setup-card h2 {
-  margin-bottom: 1.3cqw;
-  padding-bottom: 1.1cqw;
-  font-size: 3.2cqw;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  font-size: clamp(18px, 4.5vw, 22px);
 }
 
 .setup-portrait .event-select {
-  margin-bottom: 2cqw;
+  width: 100%;
+  margin-bottom: 22px;
 }
 
 .setup-portrait .event-entry-row {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  grid-template-columns: 78% 20%;
-  gap: 2%;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
 }
 
-.setup-portrait .event-entry-row select {
-  width: 100%;
-  min-width: 0;
+.setup-portrait .event-entry-row select,
+.setup-portrait .event-entry-row button,
+.setup-portrait .setup-card input,
+.setup-portrait .setup-card select,
+.setup-portrait .setup-card button {
+  min-height: 44px;
 }
 
 .setup-portrait .event-entry-row button {
-  width: 100%;
-  min-width: 0;
-  padding-inline: 0;
+  width: 72px;
 }
 
-.setup-portrait .setup-card input,
-.setup-portrait .setup-card select,
-.setup-portrait .event-entry-row button,
-.setup-portrait .create-event > button {
-  min-height: 6cqw;
-  padding: 1.1cqw 1.6cqw;
+.setup-portrait .event-select > input {
+  width: 100%;
+  margin-top: 10px;
 }
 
 .setup-portrait .create-event {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  gap: 1.3cqw;
+  display: grid;
+  gap: 12px;
 }
 
 .setup-portrait .two {
-  grid-template-columns: minmax(0, 1fr);
-  width: 100%;
-  min-width: 0;
-  gap: 1.6cqw;
-}
-
-.setup-portrait .two label,
-.setup-portrait .two input,
-.setup-portrait .create-event > input,
-.setup-portrait .create-event > details,
-.setup-portrait .create-event > button {
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .setup-portrait .create-event details {
-  padding: 1.2cqw;
+  padding: 11px;
 }
 
-.pro-app:has(.main-screen) {
+/* Main screen ----------------------------------------------------------- */
+.pro-app:has(.main-stage) {
   display: block;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  min-height: 0;
   padding: 0;
-  overflow: hidden;
 }
 
 .main-stage.scaled-layout {
   position: relative;
-  display: block;
   width: 100%;
   height: 100%;
-  padding: 0;
+  min-height: 0;
   overflow: hidden;
   container-type: size;
 }
 
 .scaled-layout .main-screen {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0 auto auto 0;
   display: flex;
   flex-direction: column;
   width: var(--main-layout-width);
@@ -366,45 +234,27 @@ body:has(.guest-portrait),
 
 .scaled-layout .main-screen > header {
   position: relative;
-  top: auto;
   flex: none;
+  width: 100%;
   height: 3.6cqw;
   min-height: 32px;
-  margin-bottom: 1cqw;
+  margin: 0 0 1cqw;
   padding: 0;
-  background: transparent;
 }
 
 .scaled-layout .workspace-grid {
   flex: 1;
+  display: grid;
+  min-width: 0;
   min-height: 0;
 }
 
 .scaled-layout .entry-panel,
 .scaled-layout .book-frame {
-  width: auto;
-  height: 100%;
-  min-height: 0;
-}
-
-.scaled-layout .entry-panel {
-  overflow: hidden;
-}
-
-.scaled-layout .book-frame {
-  overflow: hidden;
-}
-
-.scaled-layout .ledger-scroll,
-.scaled-layout .ledger-sheet {
-  width: 100%;
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
-}
-
-.scaled-layout .ledger-sheet {
-  grid-template-columns: repeat(12, minmax(0, 1fr));
+  width: auto;
+  height: 100%;
 }
 
 .scaled-landscape .workspace-grid {
@@ -412,41 +262,40 @@ body:has(.guest-portrait),
   gap: 1%;
 }
 
-.scaled-landscape .entry-panel,
-.scaled-landscape .book-frame {
-  min-width: 0;
-  max-width: 100%;
-}
-
 .scaled-landscape .entry-panel {
-  padding: 1.45cqw;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 1.5cqw;
+  scrollbar-width: thin;
+  scrollbar-color: #a7acb3 transparent;
 }
 
 .scaled-landscape .book-frame {
+  overflow: hidden;
   padding: 1.35cqw;
-  border-width: max(2px, .25cqw);
+  border-width: max(2px, 0.25cqw);
 }
 
 .scaled-landscape .entry-panel h2 {
-  margin-bottom: .75cqw;
-  padding-bottom: .6cqw;
+  margin-bottom: 0.75cqw;
+  padding-bottom: 0.6cqw;
   font-size: 2cqw;
 }
 
 .scaled-landscape .entry-panel form,
 .scaled-landscape .tools {
-  gap: .5cqw;
+  gap: 0.5cqw;
 }
 
 .scaled-landscape .entry-panel input,
 .scaled-landscape .entry-panel select {
   min-height: 3.2cqw;
-  padding: .55cqw .75cqw;
+  padding: 0.55cqw 0.75cqw;
 }
 
 .scaled-landscape .entry-panel textarea {
   min-height: 4.2cqw;
-  padding: .55cqw .75cqw;
+  padding: 0.55cqw 0.75cqw;
 }
 
 .scaled-landscape .entry-submit,
@@ -456,513 +305,182 @@ body:has(.guest-portrait),
 }
 
 .scaled-landscape .tools {
-  margin-top: .8cqw;
-  padding-top: .7cqw;
+  margin-top: 0.8cqw;
+  padding-top: 0.7cqw;
 }
 
 .scaled-landscape .book-toolbar {
-  margin-bottom: .75cqw;
+  margin-bottom: 0.75cqw;
 }
 
-.main-stage.scaled-layout.scaled-portrait {
-  width: 100vw !important;
-  max-width: 100vw;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
+.scaled-layout .book-frame {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.scaled-layout .ledger-scroll {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.scaled-layout .ledger-sheet {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+/* Portrait is a normal flow layout. No transformed desktop canvas means the
+   page never creates a horizontal scrollbar or leaves a scaled sliver. */
+.main-stage.scaled-portrait {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior-x: none;
-  overscroll-behavior-y: contain;
   touch-action: pan-y;
   scrollbar-width: thin;
   scrollbar-color: #9aa0a6 transparent;
 }
 
-.main-stage.scaled-layout.scaled-portrait::-webkit-scrollbar {
-  display: block;
-  width: 4px;
-  height: 0;
-}
-
-.main-stage.scaled-layout.scaled-portrait::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.main-stage.scaled-layout.scaled-portrait::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: #9aa0a6;
-}
-
 .scaled-portrait .main-screen {
   position: static;
-  width: 100% !important;
-  min-width: 0;
-  max-width: 100%;
+  width: 100%;
   height: auto;
   min-height: 100%;
-  padding: 3.5cqw 0;
-  overflow-x: clip !important;
+  margin: 0;
   transform: none;
-  container-type: inline-size;
+  overflow: visible;
 }
 
 .scaled-portrait .main-screen > header {
-  width: 93%;
-  max-width: 93%;
-  height: 8cqw;
-  min-height: 0;
-  margin: 0 auto 2.2cqw;
-}
-
-.scaled-portrait .event-title {
-  font-size: 5cqw;
+  width: min(94%, 720px);
+  height: clamp(42px, 11vw, 62px);
+  margin: 0 auto 2.5vw;
+  padding: 0;
 }
 
 .scaled-portrait .workspace-grid {
-  flex: none;
-  width: 93% !important;
-  min-width: 0;
-  max-width: 93%;
-  margin-inline: auto;
-  grid-template-columns: 1fr;
+  width: min(94%, 720px);
+  margin: 0 auto;
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto auto;
-  gap: 6cqw;
-  overflow-x: clip !important;
-}
-
-.scaled-portrait .entry-panel,
-.scaled-portrait .book-frame {
-  order: initial;
-  width: 100% !important;
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: hidden !important;
+  gap: clamp(18px, 4vw, 30px);
 }
 
 .scaled-portrait .entry-panel {
-  display: flex;
-  flex-direction: column;
-  height: auto;
-  gap: 2cqw;
-  padding: 5%;
-  contain: inline-size;
-}
-
-.scaled-portrait .entry-panel h2 {
-  flex: none;
-  margin: 0;
-  padding-bottom: 2.2cqw;
-  font-size: 5cqw;
-}
-
-.scaled-portrait .entry-panel form {
-  flex: none;
   width: 100%;
-  align-content: start;
-  gap: 2.2cqw;
+  height: auto;
   min-height: 0;
+  overflow: visible;
+  padding: clamp(18px, 4vw, 28px);
 }
 
 .scaled-portrait .entry-panel input,
 .scaled-portrait .entry-panel select {
-  min-height: 10cqw;
-  padding: 2cqw 3cqw;
-  border-radius: 2cqw;
-  font-size: 3.5cqw;
+  min-height: clamp(42px, 10vw, 54px);
 }
 
 .scaled-portrait .entry-panel textarea {
-  min-height: 18cqw;
-  padding: 3cqw;
-  border-radius: 2cqw;
-  font-size: 3.5cqw;
+  min-height: clamp(76px, 18vw, 120px);
 }
 
 .scaled-portrait .methods,
 .scaled-portrait .remark-buttons {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: 100%;
-  gap: 1.5cqw 2%;
-  font-size: 3.2cqw;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  white-space: normal;
 }
 
-.scaled-portrait .methods > span,
-.scaled-portrait .remark-buttons > span {
-  grid-column: 1 / -1;
-  width: auto;
-}
-
-.scaled-portrait .methods label {
-  justify-content: flex-start;
-  white-space: nowrap;
-}
-
-.scaled-portrait .methods input {
-  width: auto;
-  min-height: 0;
-  padding: 0;
-}
-
-.scaled-portrait .remark-buttons button {
-  width: 100%;
-  padding: 1.6cqw 4%;
-  border-radius: 1.6cqw;
-}
-
-.scaled-portrait .entry-submit {
-  min-height: 12cqw;
-  margin-top: 2cqw;
-  border-radius: 2cqw;
-  font-size: 4.2cqw;
-}
-
-.scaled-portrait .tools {
-  flex: none;
-  align-content: start;
-  gap: 3cqw;
-  min-height: 0;
-  margin-top: 4cqw;
-  padding-top: 5cqw;
-}
-
-.scaled-portrait .tools h3 {
-  margin-bottom: 1cqw;
-  font-size: 5cqw;
-}
-
+.scaled-portrait .entry-submit,
 .scaled-portrait .tools > button,
 .scaled-portrait .voice {
-  min-height: 11cqw;
-  border-radius: 2cqw;
-  font-size: 3.5cqw;
-}
-
-.scaled-portrait .switch-track {
-  display: block;
-  width: 11cqw;
-  height: 6cqw;
-}
-
-.scaled-portrait .switch-track::after {
-  top: .8cqw;
-  left: .8cqw;
-  width: 4.4cqw;
-  height: 4.4cqw;
-}
-
-.scaled-portrait .voice > input:checked + .switch-track::after {
-  transform: translateX(5cqw);
-}
-
-.scaled-portrait .search input {
-  min-height: 11cqw;
-  padding-right: 10cqw;
-}
-
-.scaled-portrait .search button {
-  top: .8cqw;
-  right: .8cqw;
-  width: 9.4cqw;
-  height: 9.4cqw;
-  font-size: 4.4cqw;
+  min-height: clamp(46px, 11vw, 58px);
 }
 
 .scaled-portrait .book-frame {
-  height: 150cqw;
-  min-height: 150cqw;
-  padding: 4%;
-  border-width: max(2px, .8cqw);
-  border-radius: 2.5cqw;
-  contain: inline-size layout paint;
-}
-
-/* Landscape has a fixed viewport: only the left entry card may scroll. The
-   ledger always consumes the remaining track and is scaled with main-screen. */
-.main-stage.scaled-layout.scaled-landscape,
-.scaled-landscape .main-screen,
-.scaled-landscape .workspace-grid,
-.scaled-landscape .book-frame,
-.scaled-landscape .ledger-scroll {
-  overflow: hidden !important;
-}
-
-.scaled-landscape .entry-panel {
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  overscroll-behavior: contain;
-  scrollbar-width: thin;
-  scrollbar-color: #a7acb3 transparent;
-}
-
-.scaled-landscape .entry-panel::-webkit-scrollbar {
-  display: block;
-  width: 4px;
-  height: 0;
-}
-
-.scaled-landscape .entry-panel::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.scaled-landscape .entry-panel::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: #a7acb3;
-}
-
-.scaled-landscape .book-frame {
-  contain: layout paint;
+  width: 100%;
+  height: clamp(560px, 120vw, 820px);
+  min-height: 560px;
+  padding: clamp(10px, 2.5vw, 18px);
+  border-width: clamp(2px, 0.7vw, 4px);
 }
 
 .scaled-portrait .book-toolbar {
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 2.5cqw;
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  margin-bottom: 4cqw;
-  overflow: hidden;
-  font-size: 3.2cqw;
-}
-
-.scaled-portrait .book-toolbar > div:first-child {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr);
-  width: 100%;
-  min-width: 0;
-  max-width: 100%;
-  gap: 1.2cqw 2cqw;
-  white-space: normal;
-}
-
-.scaled-portrait .book-toolbar strong {
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-  font-size: 4.5cqw;
-  overflow-wrap: anywhere;
-  white-space: normal;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
 }
 
 .scaled-portrait .pager {
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  width: 100%;
-  gap: 2cqw;
-  margin-left: 0;
-  font-size: 4cqw;
+  margin-left: auto;
 }
 
-.scaled-portrait .pager button {
-  width: 8cqw;
-  height: 8cqw;
-}
-
-.scaled-portrait .page-number {
-  width: 7cqw !important;
-  height: 7cqw;
-}
-
-.scaled-portrait .name-cell b {
-  font-size: clamp(15px, 4cqw, 25px);
-}
-
-.scaled-portrait .type-cell {
-  font-size: clamp(13px, 3.5cqw, 22px);
-  letter-spacing: .12em;
-}
-
-.scaled-portrait .amount-cell b {
-  font-size: clamp(12px, 3.2cqw, 20px);
-}
-
-.scaled-portrait .amount-cell small {
-  bottom: 1.2cqw;
-  font-size: clamp(7px, 2cqw, 11px);
-}
-
-/* Phones and other genuinely small windows prioritise fast gift entry. The
-   secondary tool area is intentionally removed in both orientations. */
-@media (max-width: 640px), (max-height: 700px) {
-  .scaled-layout .tools {
-    display: none !important;
+/* Small screens keep the form focused; the ledger remains fully visible. */
+@media (max-width: 700px) {
+  .setup-portrait .setup-card {
+    width: 94%;
   }
 
-  .scaled-portrait .entry-panel {
-    padding-bottom: 5cqw;
+  .setup-portrait .two {
+    grid-template-columns: minmax(0, 1fr);
   }
-}
 
-@container (max-width: 640px) {
   .scaled-portrait .tools {
-    display: none !important;
+    display: none;
+  }
+
+  .scaled-portrait .book-frame {
+    height: clamp(540px, 132vw, 760px);
+    min-height: 540px;
   }
 }
 
-.guest-book {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden !important;
-}
-
-.guest-app {
-  container-type: size;
-}
-
-.guest-ledger-scroll {
-  flex: 1;
-  width: 100%;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.guest-ledger {
-  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
-  width: 100% !important;
-  min-width: 0 !important;
-}
-
-@media (orientation: portrait) and (max-width: 900px) {
-  .guest-app {
-    padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-  }
-
-  .guest-name {
-    font-size: clamp(10px, 3.2cqw, 18px);
-    line-height: 1.1;
-    letter-spacing: .04em;
-  }
-
-  .guest-label {
-    font-size: clamp(9px, 3cqw, 17px);
-    line-height: 1.1;
-    letter-spacing: .04em;
-  }
-
-  .guest-amount span {
-    font-size: clamp(8px, 2.7cqw, 15px);
-    line-height: 1.1;
-    letter-spacing: .03em;
-  }
-
-  .guest-amount small {
-    bottom: 3px;
-    font-size: clamp(5px, 1.7cqw, 8px);
-  }
-}
-
-@container (max-height: 600px) {
+/* Landscape uses the single scale calculated by ProfessionalApp. At short
+   heights the entry form may scroll internally; the book never does. */
+@media (orientation: landscape) and (max-height: 820px) {
   .scaled-landscape .main-screen > header {
-    height: 28px;
-    min-height: 28px;
-    margin-bottom: 4px;
+    height: 32px;
+    min-height: 32px;
   }
 
   .scaled-landscape .entry-panel {
-    padding: 7px 9px;
-  }
-
-  .scaled-landscape .entry-panel h2 {
-    margin-bottom: 4px;
-    padding-bottom: 3px;
-    font-size: 17px;
-  }
-
-  .scaled-landscape .entry-panel form,
-  .scaled-landscape .tools {
-    gap: 3px;
-  }
-
-  .scaled-landscape .entry-panel input,
-  .scaled-landscape .entry-panel select {
-    min-height: 26px;
-    padding: 3px 6px;
-    font-size: 11px;
-  }
-
-  .scaled-landscape .entry-panel textarea {
-    min-height: 34px;
-    padding: 3px 6px;
-    font-size: 11px;
-  }
-
-  .scaled-landscape .methods,
-  .scaled-landscape .remark-buttons {
-    gap: 2px 5px;
-    font-size: 8px;
-  }
-
-  .scaled-landscape .remark-buttons button {
-    padding: 1px 4px;
-  }
-
-  .scaled-landscape .entry-submit,
-  .scaled-landscape .tools > button,
-  .scaled-landscape .voice {
-    min-height: 27px;
-    font-size: 10px;
-  }
-
-  .scaled-landscape .tools {
-    margin-top: 4px;
-    padding-top: 4px;
-  }
-
-  .scaled-landscape .tools h3 {
-    font-size: 13px;
-  }
-}
-
-@container (max-height: 700px) {
-  .setup-landscape .setup-card {
-    padding: 1.2cqw 3cqw;
-  }
-
-  .setup-landscape .setup-title {
-    margin-bottom: .5cqw;
-    font-size: 2.3cqw;
-  }
-
-  .setup-landscape .setup-card h2 {
-    margin-bottom: .4cqw;
-    padding-bottom: .35cqw;
-    font-size: 1.55cqw;
-  }
-
-  .setup-landscape .event-select {
-    margin-bottom: .7cqw;
-  }
-
-  .setup-landscape .setup-card input,
-  .setup-landscape .setup-card select,
-  .setup-landscape .event-entry-row button,
-  .setup-landscape .create-event > button {
-    min-height: 3.7cqw;
-    padding: .45cqw .8cqw;
-  }
-
-  .setup-landscape .create-event {
-    gap: .45cqw;
-  }
-
-  .setup-landscape .two {
-    gap: .55cqw;
-  }
-
-  .setup-landscape .two label {
-    font-size: 1.05cqw;
-  }
-
-  .setup-landscape .create-event details {
-    padding: .5cqw;
+    scrollbar-width: thin;
   }
 }
 
 @media print {
+  html,
+  body,
+  #app,
+  .pro-app,
   .main-stage,
   .main-screen {
-    display: block !important;
-    width: 100% !important;
-    height: auto !important;
-    transform: none !important;
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+    transform: none;
+  }
+
+  .main-screen > header,
+  .entry-panel,
+  .book-toolbar {
+    display: none;
+  }
+
+  .workspace-grid {
+    display: block;
+  }
+
+  .book-frame {
+    height: 190mm;
+    border: 0;
+  }
+
+  .ledger-scroll {
+    overflow: visible;
   }
 }
