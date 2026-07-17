@@ -1,0 +1,25 @@
+{
+  "name": "gift-ledger",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build:win": "tauri build --bundles nsis",
+    "tauri:android:init": "tauri android init",
+    "tauri:android:dev": "tauri android dev",
+    "tauri:build:apk": "tauri android build --apk"
+  },
+  "dependencies": {
+    "vue": "^3.5.16"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "@vitejs/plugin-vue": "5.2.4",
+    "vite": "5.4.21"
+  }
+}
