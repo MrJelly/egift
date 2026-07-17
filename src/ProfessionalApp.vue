@@ -1,6 +1,9 @@
 <script setup>
-import { isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { save } from "@tauri-apps/plugin-dialog";
+import { writeFile } from "@tauri-apps/plugin-fs";
+import QRCode from "qrcode";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import {
   amountToChinese,
@@ -35,6 +38,11 @@ const showBackup = ref(false);
 const showSettings = ref(false);
 const showDelete = ref(false);
 const showAbolish = ref(false);
+const showSearchResults = ref(false);
+const showLanShare = ref(false);
+const lanBusy = ref(false);
+const lanSession = ref(null);
+const lanQrCode = ref("");
 const selectedRecordId = ref("");
 const editing = ref(null);
 const editMode = ref("");
@@ -47,6 +55,7 @@ const pdfBusy = ref(false);
 const toast = ref(null);
 let toastTimer;
 let syncChannel;
+let lanSyncTimer;
 
 const createForm = reactive({
   name: "",
@@ -93,14 +102,17 @@ const activeTheme = computed(() => currentEvent.value?.theme || createForm.theme
 const activeRecords = computed(() =>
   (currentEvent.value?.records || []).filter((record) => !record.abolished),
 );
-const filteredRecords = computed(() => {
+const filteredRecords = computed(() =>
+  [...activeRecords.value].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
+);
+const searchResults = computed(() => {
   const keyword = query.value.trim().toLowerCase();
-  return [...activeRecords.value]
+  if (!keyword) return [];
+  return filteredRecords.value
     .filter((record) => {
       const haystack = [record.name, record.method, ...Object.values(record.remarks || {})].join(" ").toLowerCase();
-      return !keyword || haystack.includes(keyword);
-    })
-    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      return haystack.includes(keyword);
+    });
 });
 const pageCount = computed(() => Math.max(1, Math.ceil(filteredRecords.value.length / PAGE_SIZE)));
 const pageItems = computed(() => filteredRecords.value.slice((page.value - 1) * PAGE_SIZE, page.value * PAGE_SIZE));
@@ -122,12 +134,14 @@ watch(
   () => {
     localStorage.setItem(EVENTS_KEY, JSON.stringify(events.value));
     syncGuestScreen();
+    syncLanScreen();
   },
   { deep: true },
 );
 watch(filteredRecords, () => {
   page.value = Math.min(page.value, pageCount.value);
 });
+watch(activeId, syncLanScreen);
 
 onMounted(() => {
   if ("BroadcastChannel" in window) {
@@ -136,11 +150,13 @@ onMounted(() => {
       if (data?.type === "guest-ready") syncGuestScreen();
     };
   }
+  restoreLanSession();
 });
 
 onBeforeUnmount(() => {
   syncChannel?.close();
   clearTimeout(toastTimer);
+  clearTimeout(lanSyncTimer);
 });
 
 function normalizeEvent(event) {
@@ -311,6 +327,16 @@ function openRecord(record) {
   editing.value = null;
 }
 
+function openSearchResults() {
+  if (!query.value.trim()) return notify("请输入要查找的姓名或备注", "error");
+  showSearchResults.value = true;
+}
+
+function openSearchRecord(record) {
+  showSearchResults.value = false;
+  openRecord(record);
+}
+
 function startEdit(mode) {
   if (!selectedRecord.value) return;
   editMode.value = mode;
@@ -374,7 +400,7 @@ function remarkText(record) {
   return parts.join("；");
 }
 
-function exportExcel() {
+async function exportExcel() {
   if (!globalThis.XLSX) return notify("Excel 组件未加载", "error");
   const rows = (currentEvent.value.records || []).map((record, index) => ({
     序号: index + 1,
@@ -391,20 +417,89 @@ function exportExcel() {
   }));
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(rows), "礼金明细");
-  XLSX.writeFile(workbook, `${safeFilename(currentEvent.value.name)}_礼金记录.xlsx`);
-  notify("Excel 已导出");
+  const bytes = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+  await deliverExport(
+    new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+    `${safeFilename(currentEvent.value.name)}_礼金记录.xlsx`,
+    "Excel",
+  );
 }
 
-function exportBackup() {
+async function exportBackup() {
   const payload = {
     app: "vue-gift-book",
     version: 2,
     exportedAt: new Date().toISOString(),
     events: events.value,
   };
-  downloadBlob(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }), `电子礼簿备份_${new Date().toISOString().slice(0, 10)}.json`);
+  const delivered = await deliverExport(
+    new Blob([JSON.stringify(payload, null, 2)], { type: "application/json;charset=utf-8" }),
+    `电子礼簿备份_${new Date().toISOString().slice(0, 10)}.json`,
+    "数据备份",
+  );
+  if (!delivered) return;
   backupExported.value = true;
-  notify("加密数据备份已导出");
+}
+
+async function deliverExport(blob, filename, label, { preferShare = false } = {}) {
+  const android = /Android/i.test(navigator.userAgent);
+  const extension = filename.split(".").pop() || "bin";
+  const mimeType = blob.type.split(";")[0] || "application/octet-stream";
+
+  if (android && preferShare) {
+    const file = new File([blob], filename, { type: blob.type });
+    const canShareFiles = typeof navigator.share === "function"
+      && (typeof navigator.canShare !== "function" || navigator.canShare({ files: [file] }));
+
+    if (canShareFiles) {
+      try {
+        await navigator.share({ title: filename, files: [file] });
+        notify(`${label} 已交给安卓系统处理`);
+        return true;
+      } catch (error) {
+        if (error?.name === "AbortError") return false;
+        console.warn("安卓分享不可用，改用系统保存窗口", error);
+      }
+    }
+  }
+
+  if (isTauri()) {
+    try {
+      const filePath = await save({
+        defaultPath: filename,
+        filters: [{ name: label, extensions: [extension] }],
+      });
+      if (!filePath) return false;
+      await writeFile(filePath, new Uint8Array(await blob.arrayBuffer()));
+      notify(`${label} 已保存到：${filePath}`);
+      return true;
+    } catch (error) {
+      console.error("系统保存失败", error);
+      notify(`${label} 保存失败：${error.message || error}`, "error");
+      return false;
+    }
+  }
+
+  if (typeof window.showSaveFilePicker === "function") {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: label, accept: { [mimeType]: [`.${extension}`] } }],
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      notify(`${label} 已保存`);
+      return true;
+    } catch (error) {
+      if (error?.name === "AbortError") return false;
+      console.warn("文件保存窗口不可用，改用浏览器下载", error);
+    }
+  }
+
+  downloadBlob(blob, filename);
+  notify(`${label} 已下载，请到浏览器下载列表中查看`);
+  return true;
 }
 
 async function restoreBackup(event) {
@@ -463,6 +558,117 @@ function syncGuestScreen() {
     });
   } catch (error) {
     console.warn("副屏广播失败，副屏仍可通过本地存储同步。", error);
+  }
+}
+
+function buildLanSnapshot() {
+  if (!currentEvent.value) return null;
+  return {
+    version: 1,
+    updatedAt: new Date().toISOString(),
+    event: {
+      id: currentEvent.value.id,
+      name: currentEvent.value.name,
+      theme: currentEvent.value.theme,
+      hidePrivacy: Boolean(currentEvent.value.hidePrivacy),
+      records: (currentEvent.value.records || []).map((record) => ({
+        id: record.id,
+        name: record.name,
+        amount: Number(record.amount),
+        amountText: amountToChinese(record.amount),
+        method: record.method,
+        level: Number(record.level || 0),
+        createdAt: record.createdAt,
+        abolished: Boolean(record.abolished),
+      })),
+    },
+  };
+}
+
+async function createLanQrCode(session) {
+  lanQrCode.value = await QRCode.toDataURL(session.url, {
+    width: 280,
+    margin: 1,
+    errorCorrectionLevel: "M",
+    color: { dark: "#18181b", light: "#ffffffff" },
+  });
+}
+
+async function openLanShare() {
+  showEventMenu.value = false;
+  if (!isTauri()) return notify("局域网副屏需要在 Windows 或安卓应用中开启", "error");
+  const snapshot = buildLanSnapshot();
+  if (!snapshot) return;
+  lanBusy.value = true;
+  try {
+    const session = await invoke("start_lan_server", { snapshot });
+    lanSession.value = session;
+    await createLanQrCode(session);
+    showLanShare.value = true;
+    notify("局域网副屏已开启");
+  } catch (error) {
+    console.error("开启局域网副屏失败", error);
+    notify(`局域网副屏开启失败：${error}`, "error");
+  } finally {
+    lanBusy.value = false;
+  }
+}
+
+function syncLanScreen() {
+  if (!isTauri() || !lanSession.value || !currentEvent.value) return;
+  clearTimeout(lanSyncTimer);
+  lanSyncTimer = setTimeout(async () => {
+    try {
+      await invoke("update_lan_snapshot", { snapshot: buildLanSnapshot() });
+    } catch (error) {
+      console.warn("局域网副屏同步失败", error);
+    }
+  }, 80);
+}
+
+async function restoreLanSession() {
+  if (!isTauri()) return;
+  try {
+    const session = await invoke("lan_server_status");
+    if (!session) return;
+    lanSession.value = session;
+    await createLanQrCode(session);
+    syncLanScreen();
+  } catch (error) {
+    console.warn("读取局域网副屏状态失败", error);
+  }
+}
+
+async function copyLanUrl() {
+  if (!lanSession.value?.url) return;
+  try {
+    await navigator.clipboard.writeText(lanSession.value.url);
+  } catch {
+    const textarea = document.createElement("textarea");
+    textarea.value = lanSession.value.url;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    textarea.remove();
+  }
+  notify("副屏地址已复制");
+}
+
+async function stopLanShare() {
+  if (!isTauri()) return;
+  lanBusy.value = true;
+  try {
+    await invoke("stop_lan_server");
+    lanSession.value = null;
+    lanQrCode.value = "";
+    showLanShare.value = false;
+    notify("局域网副屏已停止");
+  } catch (error) {
+    notify(`停止局域网副屏失败：${error}`, "error");
+  } finally {
+    lanBusy.value = false;
   }
 }
 
@@ -635,8 +841,12 @@ async function generatePdf() {
       amountText: amountToChinese(record.amount),
     }));
     const bytes = await generator.generate(data);
-    downloadBlob(new Blob([bytes], { type: "application/pdf" }), `${safeFilename(currentEvent.value.name)}_电子礼簿_${new Date().toISOString().slice(0, 10)}.pdf`);
-    notify("PDF 已生成");
+    await deliverExport(
+      new Blob([bytes], { type: "application/pdf" }),
+      `${safeFilename(currentEvent.value.name)}_电子礼簿_${new Date().toISOString().slice(0, 10)}.pdf`,
+      "PDF",
+      { preferShare: true },
+    );
   } catch (error) {
     console.error(error);
     notify(`PDF 生成失败：${error.message}`, "error");
@@ -684,7 +894,8 @@ async function generatePdf() {
           <transition name="menu-pop"><nav v-if="showEventMenu" class="event-dropdown">
             <button type="button" @click="switchEvent">切换/创建事项</button>
             <button type="button" @click="showBackup = true; showEventMenu = false">备份/恢复数据</button>
-            <button type="button" @click="openGuestScreen">进入副屏</button>
+            <button type="button" @click="openGuestScreen">本机打开副屏</button>
+            <button type="button" :disabled="lanBusy" @click="openLanShare">{{ lanSession ? '查看局域网副屏二维码' : '开启局域网副屏（扫码）' }}</button>
             <button type="button" @click="openSettings">设置此事项</button>
             <button class="danger" type="button" @click="openDeleteDialog">删除此事项</button>
           </nav></transition>
@@ -707,7 +918,7 @@ async function generatePdf() {
             <button class="primary entry-submit">确认录入</button>
           </form>
 
-          <div class="tools"><h3>功能区</h3><div class="search"><input v-model="query" placeholder="按姓名查找…" /><i class="ri-search-line"></i></div><button class="primary" :disabled="pdfBusy" @click="generatePdf"><i :class="pdfBusy ? 'ri-loader-4-line spin' : 'ri-printer-line'"></i>{{ pdfBusy ? '正在生成 PDF…' : '打印/另存为PDF' }}</button><button @click="exportExcel"><i class="ri-file-excel-2-line"></i>导出为 Excel</button><button class="primary" @click="showStats = true"><i class="ri-pie-chart-line"></i>查看统计</button><label class="voice"><span><i class="ri-volume-up-line"></i>语音播报</span><input v-model="speech" type="checkbox" /></label></div>
+          <div class="tools"><h3>功能区</h3><div class="search"><input v-model="query" placeholder="按姓名或备注查找…" @keydown.enter.prevent="openSearchResults" /><button type="button" aria-label="搜索礼金记录" @click="openSearchResults"><i class="ri-search-line"></i></button></div><button class="primary" :disabled="pdfBusy" @click="generatePdf"><i :class="pdfBusy ? 'ri-loader-4-line spin' : 'ri-printer-line'"></i>{{ pdfBusy ? '正在生成 PDF…' : '打印/另存为PDF' }}</button><button @click="exportExcel"><i class="ri-file-excel-2-line"></i>导出为 Excel</button><button class="primary" @click="showStats = true"><i class="ri-pie-chart-line"></i>查看统计</button><label class="voice"><span class="voice-label"><i class="ri-volume-up-line"></i>语音播报</span><input v-model="speech" type="checkbox" role="switch" :aria-checked="speech" /><span class="switch-track" aria-hidden="true"></span></label></div>
         </aside>
 
         <section class="book-frame">
@@ -719,6 +930,10 @@ async function generatePdf() {
         </section>
       </div>
     </section>
+
+    <div v-if="showSearchResults" class="modal-backdrop" @click.self="showSearchResults = false"><section class="modal-card search-results-card"><button class="modal-close" type="button" aria-label="关闭搜索结果" @click="showSearchResults = false"><span aria-hidden="true">×</span></button><h2>“{{ query.trim() }}”的搜索结果</h2><div v-if="searchResults.length" class="search-result-list"><article v-for="record in searchResults" :key="record.id" class="search-result-item"><div><b>姓名：<span>{{ record.name }}</span></b><p>金额：{{ formatMoney(record.amount) }}（{{ record.method }}）</p><small v-if="remarkText(record)">备注：{{ remarkText(record) }}</small></div><button class="primary" type="button" @click="openSearchRecord(record)">查看详情</button></article></div><div v-else class="search-empty"><i class="ri-search-eye-line"></i><p>没有找到匹配的礼金记录</p><small>可以尝试输入完整姓名、收款类型或备注关键词</small></div><footer><button class="secondary" type="button" @click="showSearchResults = false">关闭</button></footer></section></div>
+
+    <div v-if="showLanShare && lanSession" class="modal-backdrop" @click.self="showLanShare = false"><section class="modal-card lan-share-card"><button class="modal-close" type="button" aria-label="关闭二维码" @click="showLanShare = false"><span aria-hidden="true">×</span></button><h2>局域网副屏</h2><p class="lan-share-status"><span></span>正在共享“{{ currentEvent.name }}”的只读数据</p><div class="lan-share-grid"><div class="lan-qr"><img v-if="lanQrCode" :src="lanQrCode" alt="手机副屏二维码" /><i v-else class="ri-loader-4-line spin"></i></div><div class="lan-share-info"><h3>手机扫码即可查看</h3><ol><li>手机和平板连接同一个 Wi-Fi 或热点</li><li>使用微信或系统相机扫描二维码</li><li>在浏览器中打开，录入后会自动同步</li><li>若 Windows 首次弹出防火墙提示，请选择“允许访问”</li></ol><label>访问地址<div class="lan-url"><code>{{ lanSession.url }}</code><button type="button" @click="copyLanUrl">复制</button></div></label><p class="lan-warning"><i class="ri-shield-check-line"></i>副屏只能查看，不能修改礼金；停止共享后此链接立即失效。</p></div></div><footer><button class="danger-outline" type="button" :disabled="lanBusy" @click="stopLanShare">停止共享</button><button class="secondary" type="button" @click="showLanShare = false">暂时关闭二维码</button></footer></section></div>
 
     <div v-if="selectedRecord" class="modal-backdrop" @click.self="selectedRecordId = ''"><section class="modal-card record-detail"><button class="modal-close" @click="selectedRecordId = ''"><span aria-hidden="true">×</span></button><h2>{{ selectedRecord.name }} 的礼金详情</h2><h3>当前记录信息</h3><div class="detail-row"><div><b>姓名：</b><span>{{ selectedRecord.name }}</span></div><button @click="startEdit('name')">纠错</button></div><div class="detail-row"><div><b>金额：</b><strong>{{ formatMoney(selectedRecord.amount) }}</strong><small>类型：{{ selectedRecord.method }}</small></div><button @click="startEdit('amount')">修改</button></div><div class="detail-row"><div><b>备注：</b><p>{{ remarkText(selectedRecord) || '（无备注）' }}</p></div><button @click="startEdit('remarks')">修改</button></div><div class="detail-time">录入时间：{{ formatDateTime(selectedRecord.createdAt) }}<br v-if="selectedRecord.updatedAt !== selectedRecord.createdAt" /> <span v-if="selectedRecord.updatedAt !== selectedRecord.createdAt">最后修改：{{ formatDateTime(selectedRecord.updatedAt) }}</span></div><details v-if="selectedRecord.history?.length" class="history"><summary>查看修改记录（{{ selectedRecord.history.length }}）</summary><ol><li v-for="(item,index) in selectedRecord.history" :key="index"><time>{{ formatDateTime(item.at) }}</time><span>{{ item.text }}</span></li></ol></details><footer><button class="danger-outline" :disabled="selectedRecord.abolished" @click="requestAbolish"><i class="ri-delete-bin-6-line"></i>{{ selectedRecord.abolished ? '此记录已作废' : '作废此记录' }}</button><button class="secondary" @click="selectedRecordId = ''">关闭</button></footer></section></div>
 

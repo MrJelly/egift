@@ -1,6 +1,6 @@
 [package]
 name = "gift-ledger"
-version = "0.1.1"
+version = "0.1.2"
 description = "电子礼簿桌面与移动应用"
 authors = ["JBD"]
 license = ""
@@ -19,6 +19,14 @@ tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
 tauri = { version = "2.11.3", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+axum = { version = "0.8", features = ["ws"] }
+local-ip-address = "0.6"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["net", "sync"] }
+uuid = { version = "1", features = ["v4"] }
 
 [profile.dev]
 panic = "abort"

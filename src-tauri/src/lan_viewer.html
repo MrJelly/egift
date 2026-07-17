@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#b90b0b" />
+  <title>电子礼簿 · 局域网副屏</title>
+  <style>
+    :root{font-family:"Microsoft YaHei","PingFang SC",sans-serif;color:#20242a;background:#f0f2f5}*{box-sizing:border-box}html,body{width:100%;height:100%;margin:0}button{font:inherit}.app{--accent:#c90707;--line:#ef9292;--paper:#fff2f2;display:grid;grid-template-rows:auto minmax(0,1fr);gap:12px;width:100%;height:100%;padding:18px;overflow:hidden}.app.solemn{--accent:#414b57;--line:#9ca5af;--paper:#f3f4f4}.header{display:flex;align-items:center;justify-content:space-between;gap:18px}.title{min-width:0}.title small{color:var(--accent);letter-spacing:.12em}.title h1{margin:3px 0 0;overflow:hidden;color:var(--accent);font:30px KaiTi,STKaiti,serif;text-overflow:ellipsis;white-space:nowrap}.summary{display:flex;align-items:center;gap:15px;white-space:nowrap}.summary span{font-size:14px}.summary b{margin-left:4px;color:var(--accent);font-size:20px}.connection{display:flex;align-items:center;gap:5px;color:#66717d;font-size:11px}.connection::before{width:8px;height:8px;border-radius:50%;background:#22a35a;content:""}.connection.offline::before{background:#e14747}.book{position:relative;min-height:0;padding:48px 18px 18px;border:4px solid var(--accent);border-radius:10px;background:var(--paper)}.pager{position:absolute;top:7px;right:14px;display:flex;align-items:center;gap:8px}.pager button{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:50%;background:var(--accent);color:#fff;font-size:20px;cursor:pointer}.pager button:disabled{background:#cfd4da}.ledger-wrap{width:100%;height:100%;overflow:hidden}.ledger{display:grid;grid-template-columns:repeat(12,minmax(45px,1fr));width:100%;height:100%;border-top:1px solid var(--line);border-left:1px solid var(--line)}.column{display:grid;grid-template-rows:minmax(0,1fr) 15% minmax(0,1fr);min-width:0}.column>div{display:flex;align-items:center;justify-content:center;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}.name,.amount span{writing-mode:vertical-rl;letter-spacing:.13em}.name{font:clamp(18px,2vw,28px) KaiTi,STKaiti,serif}.label{writing-mode:vertical-rl;color:var(--accent);font:bold clamp(17px,1.7vw,24px) KaiTi,STKaiti,serif;letter-spacing:.18em}.amount{position:relative;flex-direction:column}.amount span{font:clamp(16px,1.5vw,22px) KaiTi,STKaiti,serif}.amount small{position:absolute;bottom:7px;font-size:10px;font-weight:700}.column.latest{background:color-mix(in srgb,var(--accent) 8%,transparent);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--accent) 42%,transparent)}.empty .label{opacity:.65}.waiting{position:fixed;inset:0;display:grid;place-items:center;background:#f0f2f5;text-align:center}.waiting div{padding:24px}.waiting h1{margin:0 0 8px}.waiting p{color:#78828d}.hidden{display:none}
+    @media(max-width:900px) and (orientation:portrait){.app{gap:8px;padding:10px}.header{align-items:flex-start;flex-direction:column;gap:5px}.title h1{font-size:22px}.summary{gap:8px}.summary span{font-size:11px}.summary b{font-size:15px}.book{padding:42px 8px 8px;border-width:3px}.ledger-wrap{overflow-x:auto}.ledger{width:900px}.pager{top:5px;right:7px}}
+    @media(orientation:landscape) and (max-height:820px){.app{gap:5px;padding:max(5px,env(safe-area-inset-top)) max(7px,env(safe-area-inset-right)) max(5px,env(safe-area-inset-bottom)) max(7px,env(safe-area-inset-left))}.header{gap:8px}.title small{display:none}.title h1{max-width:27vw;margin:0;font-size:18px}.summary{gap:7px}.summary span{font-size:10px}.summary b{font-size:14px}.connection{font-size:9px}.book{padding:34px 5px 5px;border-width:2px;border-radius:6px}.pager{top:3px;right:5px;gap:4px;font-size:11px}.pager button{width:25px;height:25px;font-size:16px}.ledger{grid-template-columns:repeat(12,minmax(0,1fr));border-top-width:1px;border-left-width:1px}.name{font-size:clamp(15px,2vw,21px)}.label{font-size:clamp(14px,1.7vw,19px)}.amount span{font-size:clamp(13px,1.5vw,18px)}.amount small{bottom:3px;font-size:8px}}
+  </style>
+</head>
+<body>
+  <main id="app" class="app">
+    <header class="header">
+      <div class="title"><small>电子礼簿 · 局域网副屏</small><h1 id="eventName">正在连接…</h1></div>
+      <div class="summary"><span>本页小计 <b id="pageTotal">¥0.00</b></span><span>总金额 <b id="total">¥0.00</b></span><span>总人数 <b id="count">0</b></span></div>
+      <div id="connection" class="connection offline">正在连接</div>
+    </header>
+    <section class="book">
+      <div class="pager"><button id="prev" aria-label="上一页">‹</button><b>第 <span id="page">1</span> / <span id="pageCount">1</span> 页</b><button id="next" aria-label="下一页">›</button></div>
+      <div class="ledger-wrap"><div id="ledger" class="ledger"></div></div>
+    </section>
+  </main>
+  <section id="waiting" class="waiting"><div><h1>正在连接平板</h1><p>请保持手机和平板连接同一个 Wi-Fi 或热点。</p></div></section>
+  <script>
+    const PAGE_SIZE = 12;
+    const token = new URLSearchParams(location.search).get("token") || "";
+    let currentPage = 1;
+    let payload = null;
+    let previousCount = -1;
+    let reconnectTimer;
+
+    const nodes = Object.fromEntries(["app","eventName","pageTotal","total","count","connection","page","pageCount","prev","next","ledger","waiting"].map(id => [id, document.getElementById(id)]));
+    const money = value => `¥${Number(value || 0).toLocaleString("zh-CN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+    function activeRecords() {
+      return [...(payload?.event?.records || [])]
+        .filter(record => !record.abolished)
+        .sort((a, b) => Number(b.level || 0) - Number(a.level || 0) || new Date(a.createdAt) - new Date(b.createdAt));
+    }
+
+    function maskName(record, latestId) {
+      if (!payload?.event?.hidePrivacy || record.id === latestId) return record.name || "";
+      const chars = Array.from(record.name || "");
+      if (chars.length <= 1) return "*";
+      if (chars.length === 2) return `${chars[0]}*`;
+      return `${chars[0]}${"*".repeat(chars.length - 2)}${chars.at(-1)}`;
+    }
+
+    function column(record, latestId) {
+      const article = document.createElement("article");
+      article.className = `column${record ? "" : " empty"}${record?.id === latestId ? " latest" : ""}`;
+      const name = document.createElement("div");
+      name.className = "name";
+      name.textContent = record ? maskName(record, latestId) : "";
+      const label = document.createElement("div");
+      label.className = "label";
+      label.textContent = payload?.event?.theme === "theme-solemn" ? "礼金" : "贺礼";
+      const amount = document.createElement("div");
+      amount.className = "amount";
+      if (record) {
+        const text = document.createElement("span");
+        text.textContent = record.amountText || money(record.amount);
+        const numeric = document.createElement("small");
+        numeric.textContent = money(record.amount);
+        amount.append(text, numeric);
+      }
+      article.append(name, label, amount);
+      return article;
+    }
+
+    function render() {
+      if (!payload?.event) return;
+      const records = activeRecords();
+      const pages = Math.max(1, Math.ceil(records.length / PAGE_SIZE));
+      if (previousCount >= 0 && records.length !== previousCount) currentPage = pages;
+      previousCount = records.length;
+      currentPage = Math.min(Math.max(1, currentPage), pages);
+      const items = records.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+      const latestId = records.reduce((latest, record) => {
+        if (!latest || new Date(record.createdAt) > new Date(latest.createdAt)) return record;
+        return latest;
+      }, null)?.id;
+
+      nodes.app.classList.toggle("solemn", payload.event.theme === "theme-solemn");
+      nodes.eventName.textContent = payload.event.name || "未命名事项";
+      nodes.pageTotal.textContent = money(items.reduce((sum, item) => sum + Number(item.amount || 0), 0));
+      nodes.total.textContent = money(records.reduce((sum, item) => sum + Number(item.amount || 0), 0));
+      nodes.count.textContent = records.length;
+      nodes.page.textContent = currentPage;
+      nodes.pageCount.textContent = pages;
+      nodes.prev.disabled = currentPage <= 1;
+      nodes.next.disabled = currentPage >= pages;
+      nodes.ledger.replaceChildren(...items.map(item => column(item, latestId)), ...Array.from({ length: PAGE_SIZE - items.length }, () => column(null, latestId)));
+      nodes.waiting.classList.add("hidden");
+    }
+
+    function setConnection(online, text) {
+      nodes.connection.classList.toggle("offline", !online);
+      nodes.connection.textContent = text;
+    }
+
+    async function loadSnapshot() {
+      const response = await fetch(`/api/snapshot?token=${encodeURIComponent(token)}`, { cache: "no-store" });
+      if (!response.ok) throw new Error(await response.text());
+      payload = await response.json();
+      render();
+    }
+
+    function connect() {
+      clearTimeout(reconnectTimer);
+      setConnection(false, "正在连接");
+      const protocol = location.protocol === "https:" ? "wss:" : "ws:";
+      const socket = new WebSocket(`${protocol}//${location.host}/ws?token=${encodeURIComponent(token)}`);
+      socket.onopen = () => setConnection(true, "实时同步中");
+      socket.onmessage = event => {
+        try { payload = JSON.parse(event.data); render(); } catch (error) { console.error(error); }
+      };
+      socket.onclose = () => {
+        setConnection(false, "连接中断，正在重连");
+        reconnectTimer = setTimeout(connect, 1500);
+      };
+      socket.onerror = () => socket.close();
+    }
+
+    nodes.prev.addEventListener("click", () => { currentPage -= 1; render(); });
+    nodes.next.addEventListener("click", () => { currentPage += 1; render(); });
+
+    if (!token) {
+      nodes.waiting.querySelector("h1").textContent = "副屏链接无效";
+      nodes.waiting.querySelector("p").textContent = "请重新扫描平板上显示的二维码。";
+    } else {
+      loadSnapshot().catch(error => console.warn(error));
+      connect();
+    }
+  </script>
+</body>
+</html>
