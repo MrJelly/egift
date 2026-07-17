@@ -138,5 +138,5 @@ jobs:
           uploadUpdaterJson: false
           uploadUpdaterSignatures: false
           uploadWorkflowArtifacts: true
-          workflowArtifactNamePattern: egift-android-[arch]-[bundle]-[mode]
-          releaseAssetNamePattern: egift_[version]_android_[arch]_[mode].[ext]
+          workflowArtifactNamePattern: egift-android-arm64-[bundle]-[mode]
+          releaseAssetNamePattern: egift_[version]_android_arm64_[mode].[ext]

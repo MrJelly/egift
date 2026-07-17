@@ -71,7 +71,7 @@ Android 构建产物位于 `src-tauri/gen/android/app/build/outputs/`。
 每次构建完成后，可以在该次 Actions 运行页面的 `Artifacts` 区域下载：
 
 - `egift-windows-x64-nsis`：Windows 安装程序。
-- `egift-android-aarch64-apk-debug`：适用于主流 ARM64 手机、可直接安装的小体积 Android Debug APK。
+- `egift-android-arm64-apk-debug`：适用于主流 ARM64 手机、可直接安装的小体积 Android Debug APK。
 
 版本标签构建还会自动创建 GitHub Release，并把 EXE 和 APK 添加到 Release 下载列表。
 
