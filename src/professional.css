@@ -177,9 +177,102 @@ button:disabled {
     align-items: stretch
 }
 
-.event-entry-row select,
-.event-entry-row button {
+.event-entry-row>select {
+    display: none
+}
+
+.create-event details>select {
+    display: none
+}
+
+.event-entry-row>select,
+.event-entry-row>button {
     min-height: 48px
+}
+
+.pretty-select {
+    position: relative;
+    min-width: 0
+}
+
+.pretty-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 12px;
+    border: 1px solid #d9dde2;
+    border-radius: 8px;
+    background: #fff;
+    color: #20242a;
+    text-align: left;
+    font-size: 15px
+}
+
+.pretty-select-trigger:hover,
+.pretty-select-trigger[aria-expanded=true] {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent)
+}
+
+.pretty-select-trigger span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+
+.pretty-select-trigger i {
+    flex: none;
+    color: #4b5563;
+    font-size: 18px;
+    transition: transform .16s ease
+}
+
+.pretty-select-trigger[aria-expanded=true] i {
+    transform: rotate(180deg)
+}
+
+.pretty-select-menu {
+    position: absolute;
+    z-index: 60;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-height: 180px;
+    overflow: auto;
+    padding: 6px;
+    border: 1px solid #e1e5eb;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 16px 36px #17203322
+}
+
+.pretty-select-menu button {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 38px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #1f2329;
+    text-align: left;
+    font-weight: 600
+}
+
+.pretty-select-menu button:hover,
+.pretty-select-menu button.active {
+    background: var(--accent-soft);
+    color: var(--accent)
+}
+
+.theme-select {
+    margin-top: 9px
 }
 
 .event-select>input {
@@ -200,7 +293,8 @@ button:disabled {
     border-radius: 8px;
     background: #fff;
     color: #20242a;
-    outline: none
+    outline: none;
+    font-size: 15px
 }
 
 .setup-card input:focus,
@@ -624,10 +718,26 @@ button:disabled {
 }
 
 .page-number {
-    width: 32px !important;
+    width: 34px !important;
     height: 32px;
     padding: 0 !important;
-    text-align: center
+    border: 1px solid #e1e5eb;
+    border-radius: 7px;
+    background: #fff;
+    color: #111827;
+    text-align: center;
+    font-weight: 800;
+    box-shadow: 0 1px 0 #1118270a
+}
+
+.page-number::-webkit-outer-spin-button,
+.page-number::-webkit-inner-spin-button {
+    margin: 0;
+    appearance: none
+}
+
+.page-number[type=number] {
+    appearance: textfield
 }
 
 .ledger-scroll {

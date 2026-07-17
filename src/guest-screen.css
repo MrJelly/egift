@@ -1,584 +1,604 @@
 .guest-app {
-  --guest-accent: #cc0505;
-  --guest-line: #ef8d8d;
-  --guest-paper: #fff1f1;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  gap: 16px;
-  width: 100%;
-  height: 100vh;
-  height: 100dvh;
-  min-height: 0;
-  padding: 3vh 3vw;
-  overflow: hidden;
-  background: #f0f2f5;
-  color: #20242a;
+    --guest-accent: #cc0505;
+    --guest-line: #ef8d8d;
+    --guest-paper: #fff1f1;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 16px;
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    min-height: 0;
+    padding: 3vh 3vw;
+    overflow: hidden;
+    background: #f0f2f5;
+    color: #20242a;
 }
 
 .guest-app.theme-solemn {
-  --guest-accent: #38424d;
-  --guest-line: #8e98a3;
-  --guest-paper: #f0f1f2;
+    --guest-accent: #38424d;
+    --guest-line: #8e98a3;
+    --guest-paper: #f0f1f2;
 }
 
 .guest-waiting {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  text-align: center;
-  transform: translate(-50%, -50%);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    text-align: center;
+    transform: translate(-50%, -50%);
 }
 
 .guest-waiting i {
-  color: #9aa3ae;
-  font-size: 64px;
+    color: #9aa3ae;
+    font-size: 64px;
 }
 
 .guest-waiting h1 {
-  margin-bottom: 5px;
+    margin-bottom: 5px;
 }
 
 .guest-waiting p {
-  color: #7b8490;
+    color: #7b8490;
 }
 
 .guest-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 25px;
-  width: 100%;
-  max-width: 1720px;
-  margin: 0 auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 25px;
+    width: 100%;
+    max-width: 1720px;
+    margin: 0 auto;
 }
 
 .guest-header small {
-  color: var(--guest-accent);
-  letter-spacing: 0.18em;
+    color: var(--guest-accent);
+    letter-spacing: 0.18em;
 }
 
 .guest-header h1 {
-  margin: 4px 0 0;
-  font: 34px GiftSerif;
-  color: var(--guest-accent);
+    margin: 4px 0 0;
+    font: 34px GiftSerif;
+    color: var(--guest-accent);
 }
 
 .guest-totals {
-  display: flex;
-  gap: 20px;
+    display: flex;
+    gap: 20px;
 }
 
 .guest-totals span {
-  font-size: 15px;
+    font-size: 15px;
 }
 
 .guest-totals b {
-  margin-left: 6px;
-  color: var(--guest-accent);
-  font-size: 21px;
+    margin-left: 6px;
+    color: var(--guest-accent);
+    font-size: 21px;
 }
 
 .guest-book {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 1720px;
-  height: 100%;
-  min-height: 0;
-  margin: auto;
-  padding: 56px 28px 28px;
-  border: 5px solid var(--guest-accent);
-  border-radius: 10px;
-  background: var(--guest-paper);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 1720px;
+    height: 100%;
+    min-height: 0;
+    margin: auto;
+    padding: 56px 28px 28px;
+    border: 5px solid var(--guest-accent);
+    border-radius: 10px;
+    background: var(--guest-paper);
 }
 
 .guest-ledger-scroll {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .guest-pager {
-  position: absolute;
-  top: 12px;
-  right: 24px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    position: absolute;
+    top: 12px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .guest-pager button {
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--guest-accent);
-  color: #fff;
-  font-size: 21px;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--guest-accent);
+    color: #fff;
+    font-size: 21px;
 }
 
 .guest-pager button:disabled {
-  background: #cfd4da;
+    background: #cfd4da;
 }
 
 .guest-ledger {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(55px, 1fr));
-  width: 100%;
-  height: 100%;
-  border-top: 1px solid var(--guest-line);
-  border-left: 1px solid var(--guest-line);
+    display: grid;
+    grid-template-columns: repeat(12, minmax(55px, 1fr));
+    width: 100%;
+    height: 100%;
+    border-top: 1px solid var(--guest-line);
+    border-left: 1px solid var(--guest-line);
 }
 
 .guest-column {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) 15% minmax(0, 1fr);
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) 15% minmax(0, 1fr);
 }
 
-.guest-column > div {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-right: 1px solid var(--guest-line);
-  border-bottom: 1px solid var(--guest-line);
+.guest-column>div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid var(--guest-line);
+    border-bottom: 1px solid var(--guest-line);
 }
 
 .guest-name,
 .guest-amount span {
-  writing-mode: vertical-rl;
-  letter-spacing: 0.12em;
+    writing-mode: vertical-rl;
+    letter-spacing: 0.12em;
 }
 
 .guest-name {
-  font: clamp(20px, 2vw, 31px) GiftBrush;
+    font: clamp(20px, 2vw, 31px) GiftBrush;
 }
 
 .guest-label {
-  writing-mode: vertical-rl;
-  color: var(--guest-accent);
-  font: clamp(19px, 1.7vw, 27px) GiftSerif;
-  letter-spacing: 0.18em;
+    writing-mode: vertical-rl;
+    color: var(--guest-accent);
+    font: clamp(19px, 1.7vw, 27px) GiftSerif;
+    letter-spacing: 0.18em;
 }
 
 .guest-amount {
-  position: relative;
-  flex-direction: column;
+    position: relative;
+    flex-direction: column;
 }
 
 .guest-amount span {
-  font: clamp(16px, 1.35vw, 22px) GiftSerif;
+    font: clamp(16px, 1.35vw, 22px) GiftSerif;
 }
 
 .guest-amount small {
-  position: absolute;
-  bottom: 10px;
+    position: absolute;
+    bottom: 10px;
 }
 
 .guest-column.latest {
-  background: color-mix(in srgb, var(--guest-accent) 8%, transparent);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--guest-accent) 45%, transparent);
+    background: color-mix(in srgb, var(--guest-accent) 8%, transparent);
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--guest-accent) 45%, transparent);
 }
 
 .guest-column.empty .guest-label {
-  opacity: 0.68;
+    opacity: 0.68;
 }
 
 @media (max-width: 900px) {
-  .guest-app {
-    gap: 10px;
-    padding: 12px;
-  }
-  .guest-header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 6px;
-  }
-  .guest-totals {
-    flex-wrap: wrap;
-  }
-  .guest-book {
-    height: 100%;
-    min-height: 0;
-    overflow-x: auto;
-  }
-  .guest-ledger {
-    width: 960px;
-  }
+    .guest-app {
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .guest-header {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .guest-totals {
+        flex-wrap: wrap;
+    }
+
+    .guest-book {
+        height: 100%;
+        min-height: 0;
+        overflow-x: auto;
+    }
+
+    .guest-ledger {
+        width: 960px;
+    }
 }
 
 .guest-header,
 .guest-book {
-  max-width: 1480px;
+    max-width: 1480px;
 }
 
 .guest-ledger {
-  border-top-width: 2px;
-  border-left-width: 2px;
+    border-top-width: 2px;
+    border-left-width: 2px;
 }
 
-.guest-column > div {
-  border-right-width: 2px;
-  border-bottom-width: 2px;
+.guest-column>div {
+    border-right-width: 2px;
+    border-bottom-width: 2px;
 }
 
 .guest-pager-arrow span {
-  display: block;
-  width: 9px;
-  height: 9px;
-  border-top: 2px solid currentColor;
-  border-right: 2px solid currentColor;
+    display: block;
+    width: 9px;
+    height: 9px;
+    border-top: 2px solid currentColor;
+    border-right: 2px solid currentColor;
 }
 
 .guest-pager-arrow.prev span {
-  margin-left: 4px;
-  transform: rotate(-135deg);
+    margin-left: 4px;
+    transform: rotate(-135deg);
 }
 
 .guest-pager-arrow.next span {
-  margin-right: 4px;
-  transform: rotate(45deg);
+    margin-right: 4px;
+    transform: rotate(45deg);
 }
 
 .guest-pager-arrow:not(:disabled):hover {
-  filter: brightness(0.86);
-  transform: translateY(-1px);
+    filter: brightness(0.86);
+    transform: translateY(-1px);
 }
 
 .guest-amount span {
-  font-family: GiftBrush;
-  font-size: clamp(19px, 1.5vw, 25px);
+    font-family: GiftBrush;
+    font-size: clamp(19px, 1.5vw, 25px);
 }
 
 .guest-amount small {
-  font-size: 12px;
-  font-weight: 700;
+    font-size: 12px;
+    font-weight: 700;
 }
 
 @media (orientation: landscape) and (max-height: 820px) {
-  .guest-app {
-    gap: 6px;
-    padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
-  }
-  .guest-header {
-    align-items: center;
-    flex-direction: row;
-    gap: 12px;
-    min-height: 28px;
-  }
-  .guest-header > div:first-child {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-  }
-  .guest-header small {
-    display: none;
-  }
-  .guest-header h1 {
-    max-width: 28vw;
-    margin: 0;
-    overflow: hidden;
-    font-size: 20px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .guest-totals {
-    flex: none;
-    gap: 10px;
-    white-space: nowrap;
-  }
-  .guest-totals span {
-    font-size: 11px;
-  }
-  .guest-totals b {
-    margin-left: 3px;
-    font-size: 16px;
-  }
-  .guest-book {
-    height: 100%;
-    min-height: 0;
-    padding: 37px 7px 7px;
-    overflow: hidden;
-    border-width: 3px;
-    border-radius: 7px;
-  }
-  .guest-pager {
-    top: 4px;
-    right: 7px;
-    gap: 6px;
-    font-size: 12px;
-  }
-  .guest-pager button {
-    width: 28px;
-    height: 28px;
-  }
-  .guest-ledger {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    width: 100%;
-    min-width: 0;
-    border-top-width: 1px;
-    border-left-width: 1px;
-  }
-  .guest-column > div {
-    border-right-width: 1px;
-    border-bottom-width: 1px;
-  }
-  .guest-name {
-    font-size: clamp(17px, 2.2vw, 24px);
-    line-height: 1.2;
-  }
-  .guest-label {
-    font-size: clamp(16px, 1.9vw, 21px);
-    line-height: 1.2;
-    letter-spacing: 0;
-    writing-mode: horizontal-tb;
-  }
-  .guest-amount span {
-    font-size: clamp(15px, 1.7vw, 20px);
-    line-height: 1.2;
-  }
-  .guest-amount small {
-    bottom: 4px;
-    font-size: 9px;
-  }
+    .guest-app {
+        gap: 6px;
+        padding: max(6px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+    }
+
+    .guest-header {
+        align-items: center;
+        flex-direction: row;
+        gap: 12px;
+        min-height: 28px;
+    }
+
+    .guest-header>div:first-child {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .guest-header small {
+        display: none;
+    }
+
+    .guest-header h1 {
+        max-width: 28vw;
+        margin: 0;
+        overflow: hidden;
+        font-size: 20px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .guest-totals {
+        flex: none;
+        gap: 10px;
+        white-space: nowrap;
+    }
+
+    .guest-totals span {
+        font-size: 11px;
+    }
+
+    .guest-totals b {
+        margin-left: 3px;
+        font-size: 16px;
+    }
+
+    .guest-book {
+        height: 100%;
+        min-height: 0;
+        padding: 37px 7px 7px;
+        overflow: hidden;
+        border-width: 3px;
+        border-radius: 7px;
+    }
+
+    .guest-pager {
+        top: 4px;
+        right: 7px;
+        gap: 6px;
+        font-size: 12px;
+    }
+
+    .guest-pager button {
+        width: 28px;
+        height: 28px;
+    }
+
+    .guest-ledger {
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        width: 100%;
+        min-width: 0;
+        border-top-width: 1px;
+        border-left-width: 1px;
+    }
+
+    .guest-column>div {
+        border-right-width: 1px;
+        border-bottom-width: 1px;
+    }
+
+    .guest-name {
+        font-size: clamp(17px, 2.2vw, 24px);
+        line-height: 1.2;
+    }
+
+    .guest-label {
+        font-size: clamp(16px, 1.9vw, 21px);
+        line-height: 1.2;
+        letter-spacing: 0;
+        writing-mode: horizontal-tb;
+    }
+
+    .guest-amount span {
+        font-size: clamp(15px, 1.7vw, 20px);
+        line-height: 1.2;
+    }
+
+    .guest-amount small {
+        bottom: 4px;
+        font-size: 9px;
+    }
 }
 
 /* Scaled guest view: both orientations use one real-size canvas and fit it
    into the viewport with a single transform. This keeps the sheet complete
    without browser scrollbars, while the inner typography stays predictable. */
 .guest-scaled-layout {
-  position: relative;
-  display: block;
-  width: 100%;
-  height: 100dvh;
-  min-height: 0;
-  padding: 0;
-  overflow: hidden;
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
 }
 
 .guest-scaled-layout .guest-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  display: flex;
-  flex-direction: column;
-  width: var(--guest-layout-width);
-  height: var(--guest-layout-height);
-  min-height: 0;
-  padding: 16px;
-  transform: translate(-50%, -50%) scale(var(--guest-layout-scale));
-  transform-origin: center;
-  overflow: hidden;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    display: flex;
+    flex-direction: column;
+    width: var(--guest-layout-width);
+    height: var(--guest-layout-height);
+    min-height: 0;
+    padding: 16px;
+    transform: translate(-50%, -50%) scale(var(--guest-layout-scale));
+    transform-origin: center;
+    overflow: hidden;
 }
 
 .guest-scaled-layout .guest-header {
-  flex: none;
-  max-width: none;
-  margin: 0 0 8px;
+    flex: none;
+    max-width: none;
+    margin: 0 0 8px;
 }
 
 .guest-scaled-layout .guest-book {
-  flex: 1;
-  max-width: none;
-  min-height: 0;
-  overflow: hidden;
+    flex: 1;
+    max-width: none;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .guest-scaled-layout .guest-ledger-scroll {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
 }
 
 .guest-scaled-layout .guest-ledger {
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  grid-template-rows: minmax(0, 1fr);
-  width: 100%;
-  min-width: 0;
-  height: 100%;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+    height: 100%;
 }
 
 .guest-landscape .guest-container {
-  padding: 14px 18px 18px;
+    padding: 14px 18px 18px;
 }
 
 .guest-landscape .guest-header {
-  align-items: center;
-  flex-direction: row;
-  gap: 12px;
+    align-items: center;
+    flex-direction: row;
+    gap: 12px;
 }
 
 .guest-landscape .guest-header small {
-  display: none;
+    display: none;
 }
 
 .guest-landscape .guest-header h1 {
-  max-width: 340px;
-  margin: 0;
-  overflow: hidden;
-  font-size: 22px;
-  line-height: 1.1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+    max-width: 340px;
+    margin: 0;
+    overflow: hidden;
+    font-size: 22px;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .guest-landscape .guest-totals {
-  flex: 1;
-  justify-content: flex-end;
-  gap: 14px;
-  white-space: nowrap;
+    flex: 1;
+    justify-content: flex-end;
+    gap: 14px;
+    white-space: nowrap;
 }
 
 .guest-landscape .guest-totals span {
-  font-size: 13px;
+    font-size: 13px;
 }
 
 .guest-landscape .guest-totals b {
-  font-size: 17px;
+    font-size: 17px;
 }
 
 .guest-landscape .guest-book {
-  padding: 36px 10px 10px;
-  border-width: 4px;
-  border-radius: 7px;
+    padding: 36px 10px 10px;
+    border-width: 4px;
+    border-radius: 7px;
 }
 
 .guest-landscape .guest-pager {
-  top: 5px;
-  right: 9px;
-  gap: 7px;
-  font-size: 13px;
+    top: 5px;
+    right: 9px;
+    gap: 7px;
+    font-size: 13px;
 }
 
 .guest-landscape .guest-pager button {
-  width: 30px;
-  height: 30px;
+    width: 30px;
+    height: 30px;
 }
 
 .guest-landscape .guest-ledger {
-  border-top-width: 1px;
-  border-left-width: 1px;
+    border-top-width: 1px;
+    border-left-width: 1px;
 }
 
-.guest-landscape .guest-column > div {
-  border-right-width: 1px;
-  border-bottom-width: 1px;
+.guest-landscape .guest-column>div {
+    border-right-width: 1px;
+    border-bottom-width: 1px;
 }
 
 .guest-landscape .guest-name {
-  font-size: 22px;
-  line-height: 1.2;
+    font-size: 22px;
+    line-height: 1.2;
 }
 
 .guest-landscape .guest-label {
-  font-size: 18px;
-  line-height: 1.15;
-  letter-spacing: 0;
-  writing-mode: horizontal-tb;
+    font-size: 18px;
+    line-height: 1.15;
+    letter-spacing: 0;
+    writing-mode: horizontal-tb;
 }
 
 .guest-landscape .guest-amount span {
-  font-size: 18px;
-  line-height: 1.2;
+    font-size: 18px;
+    line-height: 1.2;
 }
 
 .guest-landscape .guest-amount small {
-  bottom: 5px;
-  font-size: 10px;
+    bottom: 5px;
+    font-size: 10px;
 }
 
 .guest-portrait .guest-container {
-  padding: 12px;
+    padding: 12px;
 }
 
 .guest-portrait .guest-header {
-  align-items: flex-start;
-  flex-direction: column;
-  gap: 4px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .guest-portrait .guest-header small {
-  font-size: 11px;
+    font-size: 11px;
 }
 
 .guest-portrait .guest-header h1 {
-  margin: 0;
-  font-size: 32px;
-  line-height: 1.05;
+    margin: 0;
+    font-size: 28px;
+    line-height: 1.05;
 }
 
 .guest-portrait .guest-totals {
-  flex-wrap: wrap;
-  gap: 5px 12px;
+    flex-wrap: wrap;
+    gap: 5px 12px;
 }
 
 .guest-portrait .guest-totals span {
-  font-size: 13px;
+    font-size: 13px;
 }
 
 .guest-portrait .guest-totals b {
-  margin-left: 4px;
-  font-size: 18px;
+    margin-left: 4px;
+    font-size: 18px;
 }
 
 .guest-portrait .guest-book {
-  padding: 46px 9px 9px;
-  border-width: 4px;
-  border-radius: 8px;
+    padding: 46px 9px 9px;
+    border-width: 4px;
+    border-radius: 8px;
 }
 
 .guest-portrait .guest-pager {
-  top: 8px;
-  right: 9px;
-  gap: 7px;
-  font-size: 13px;
+    top: 8px;
+    right: 9px;
+    gap: 7px;
+    font-size: 13px;
 }
 
 .guest-portrait .guest-pager button {
-  width: 31px;
-  height: 31px;
+    width: 31px;
+    height: 31px;
 }
 
 .guest-portrait .guest-ledger {
-  border-top-width: 1px;
-  border-left-width: 1px;
+    border-top-width: 1px;
+    border-left-width: 1px;
 }
 
-.guest-portrait .guest-column > div {
-  border-right-width: 1px;
-  border-bottom-width: 1px;
+.guest-portrait .guest-column>div {
+    border-right-width: 1px;
+    border-bottom-width: 1px;
 }
 
 .guest-portrait .guest-name {
-  font-size: 17px;
-  line-height: 1.15;
-  letter-spacing: 0.02em;
+    font-size: 17px;
+    line-height: 1.15;
+    letter-spacing: 0.02em;
 }
 
 .guest-portrait .guest-label {
-  font-size: 10px;
-  line-height: 1.1;
-  letter-spacing: 0;
+    font-size: 10px;
+    line-height: 1.1;
+    letter-spacing: 0;
 }
 
 .guest-portrait .guest-amount span {
-  max-height: calc(100% - 30px);
-  overflow: hidden;
-  font-size: 13px;
-  line-height: 1.08;
-  letter-spacing: 0.01em;
+    max-height: calc(100% - 30px);
+    overflow: hidden;
+    font-size: 13px;
+    line-height: 1.08;
+    letter-spacing: 0.01em;
 }
 
 .guest-portrait .guest-amount small {
-  bottom: 5px;
-  left: 50%;
-  transform: translateX(-50%);
-  writing-mode: vertical-rl;
-  font-size: 11px;
-  white-space: nowrap;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    writing-mode: vertical-rl;
+    font-size: 11px;
+    white-space: nowrap;
 }

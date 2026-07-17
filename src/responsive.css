@@ -101,13 +101,6 @@ textarea {
   gap: 0.9cqw;
 }
 
-.setup-landscape .setup-card input,
-.setup-landscape .setup-card select,
-.setup-landscape .event-entry-row button,
-.setup-landscape .create-event>button {
-  min-height: 4.8cqw;
-  padding: 0.8cqw 1.1cqw;
-}
 
 .setup-landscape .create-event,
 .setup-landscape .two {
@@ -172,17 +165,21 @@ textarea {
   gap: 10px;
 }
 
-.setup-portrait .event-entry-row select,
-.setup-portrait .event-entry-row button,
+.setup-portrait .event-entry-row>select,
+.setup-portrait .event-entry-row>button,
 .setup-portrait .setup-card input,
 .setup-portrait .setup-card select,
 .setup-portrait .setup-card button {
   min-height: 44px;
 }
 
-.setup-portrait .event-entry-row button {
-  width: 72px;
-}
+  .setup-portrait .event-entry-row>button {
+    width: 72px;
+  }
+
+  .setup-portrait .pretty-select-menu button {
+    min-height: 38px;
+  }
 
 .setup-portrait .event-select>input {
   width: 100%;
@@ -451,21 +448,20 @@ textarea {
     align-items: center;
     justify-content: center;
     gap: 0;
-    width: 44px;
-    min-height: 18px;
-    margin: 1px auto -8px;
+    margin: 18px auto 0;
     padding: 0;
     border: 0;
     border-radius: 999px;
     background: transparent;
     color: var(--accent);
-    font-size: 0;
+    font-size: 12px;
     font-weight: 700;
+    white-space: nowrap;
   }
 
   .scaled-portrait .tools-toggle i {
     font-size: 18px;
-    line-height: 1;
+    line-height: 0.9;
   }
 
   .scaled-portrait .tools {
@@ -481,7 +477,7 @@ textarea {
   .scaled-portrait .tools>.tools-toggle-close {
     width: 34px;
     min-height: 24px;
-    margin: 0 auto;
+    margin: 10px auto 0;
     padding: 0;
     border: 0;
     background: transparent;
@@ -559,6 +555,23 @@ textarea {
 
   .scaled-landscape .entry-panel {
     scrollbar-width: thin;
+  }
+}
+
+@media (max-width: 700px) {
+  .setup-screen.scaled-setup {
+    display: block !important;
+  }
+
+  .setup-screen.scaled-setup .setup-brand {
+    display: none !important;
+  }
+
+  .setup-screen.scaled-setup .setup-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 24px 18px !important;
+    box-sizing: border-box !important;
   }
 }
 

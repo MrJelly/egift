@@ -17,6 +17,10 @@ import {
 const EVENTS_KEY = "vue-gift-book-events-v1";
 const GUEST_EVENT_KEY = "gift-book-guest-event-id";
 const PAGE_SIZE = 12;
+const THEME_OPTIONS = [
+  { value: "theme-festive", label: "喜庆红（喜事）" },
+  { value: "theme-solemn", label: "肃穆灰（白事）" },
+];
 const PAYMENT_METHODS = ["现金", "微信", "支付宝", "其他"];
 const REMARK_FIELDS = [
   ["gift", "礼品"],
@@ -35,6 +39,8 @@ const speech = ref(true);
 const mobileToolsOpen = ref(false);
 const showUnlockDialog = ref(false);
 const showEventMenu = ref(false);
+const showSetupEventOptions = ref(false);
+const showThemeOptions = ref(false);
 const showStats = ref(false);
 const showBackup = ref(false);
 const showSettings = ref(false);
@@ -91,6 +97,8 @@ const viewportSize = reactive({
 });
 
 const currentEvent = computed(() => events.value.find((event) => event.id === activeId.value));
+const selectedEventLabel = computed(() => currentEvent.value?.name || "请选择一个事项");
+const selectedThemeLabel = computed(() => THEME_OPTIONS.find((theme) => theme.value === createForm.theme)?.label || THEME_OPTIONS[0].label);
 const isLandscapeLayout = computed(() => viewportSize.width >= viewportSize.height);
 const mainStageStyle = computed(() => {
   if (!isLandscapeLayout.value) {
@@ -101,8 +109,9 @@ const mainStageStyle = computed(() => {
     };
   }
 
-  const availableWidth = Math.max(1, viewportSize.width);
-  const availableHeight = Math.max(1, viewportSize.height);
+  const stagePadding = Math.min(28, Math.max(10, viewportSize.width * 0.02));
+  const availableWidth = Math.max(1, viewportSize.width - stagePadding * 2);
+  const availableHeight = Math.max(1, viewportSize.height - stagePadding * 2);
   const scale = Math.max(0.1, availableHeight / 700);
   const designWidth = availableWidth / scale;
   return {
@@ -934,7 +943,7 @@ async function generatePdf() {
       </div>
     </transition>
 
-    <section v-if="!unlocked" class="setup-screen scaled-setup"
+    <section v-if="!unlocked" class="setup-screen scaled-setup" @click="showSetupEventOptions = false; showThemeOptions = false"
       :class="isLandscapeLayout ? 'setup-landscape' : 'setup-portrait'" :style="setupStageStyle">
       <div class="setup-brand">
         <img src="/assets/gift-cover-front.jpg" alt="礼簿封面" />
@@ -948,6 +957,17 @@ async function generatePdf() {
         <section v-if="events.length" class="event-select">
           <h2>选择事项</h2>
           <div class="event-entry-row">
+            <div class="pretty-select" @click.stop>
+              <button class="pretty-select-trigger" type="button" :aria-expanded="showSetupEventOptions"
+                @click="showSetupEventOptions = !showSetupEventOptions; showThemeOptions = false">
+                <span>{{ selectedEventLabel }}</span><i class="ri-arrow-down-s-line"></i>
+              </button>
+              <div v-if="showSetupEventOptions" class="pretty-select-menu">
+                <button v-for="event in events" :key="event.id" type="button"
+                  :class="{ active: event.id === activeId }"
+                  @click="selectEvent(event.id); showSetupEventOptions = false">{{ event.name }}</button>
+              </div>
+            </div>
             <select :value="activeId" @change="selectEvent($event.target.value)">
               <option value="">请选择一个事项</option>
               <option v-for="event in events" :key="event.id" :value="event.id">{{ event.name }}</option>
@@ -964,7 +984,17 @@ async function generatePdf() {
           </div>
           <input v-model="createForm.password" type="password" minlength="4" required placeholder="设置管理密码（请牢记）" />
           <details>
-            <summary>更多设置</summary><select v-model="createForm.theme">
+            <summary>更多设置</summary><div class="pretty-select theme-select" @click.stop>
+              <button class="pretty-select-trigger" type="button" :aria-expanded="showThemeOptions"
+                @click="showThemeOptions = !showThemeOptions; showSetupEventOptions = false">
+                <span>{{ selectedThemeLabel }}</span><i class="ri-arrow-down-s-line"></i>
+              </button>
+              <div v-if="showThemeOptions" class="pretty-select-menu">
+                <button v-for="theme in THEME_OPTIONS" :key="theme.value" type="button"
+                  :class="{ active: theme.value === createForm.theme }"
+                  @click="createForm.theme = theme.value; showThemeOptions = false">{{ theme.label }}</button>
+              </div>
+            </div><select v-model="createForm.theme">
               <option value="theme-festive">喜庆红（喜事）</option>
               <option value="theme-solemn">肃穆灰（白事）</option>
             </select><input v-model="createForm.recorder" placeholder="记账人（选填）" />
@@ -1022,23 +1052,23 @@ async function generatePdf() {
               <h3>功能区</h3>
               <div class="search"><input v-model="query" placeholder="按姓名或备注查找…"
                   @keydown.enter.prevent="openSearchResults" /><button type="button" aria-label="搜索礼金记录"
-                  @click="openSearchResults"><i class="ri-search-line"></i></button></div><button class="primary"
-                :disabled="pdfBusy" @click="generatePdf"><i
-                  :class="pdfBusy ? 'ri-loader-4-line spin' : 'ri-printer-line'"></i>{{ pdfBusy ? '正在生成 PDF…' :
-                    '打印/另存为PDF' }}</button><button @click="exportExcel"><i class="ri-file-excel-2-line"></i>导出为
-                Excel</button><button class="primary" @click="showStats = true"><i
-                  class="ri-pie-chart-line"></i>查看统计</button><label class="voice"><span class="voice-label"><i
-                    class="ri-volume-up-line"></i>语音播报</span><input v-model="speech" type="checkbox" role="switch"
-                  :aria-checked="speech" /><span class="switch-track" aria-hidden="true"></span></label><button
-                class="tools-toggle tools-toggle-close" type="button" aria-label="收起功能区"
-                @click="mobileToolsOpen = false"><i class="ri-arrow-up-s-line"></i></button>
+                  @click="openSearchResults"><i class="ri-search-line"></i></button></div><button :disabled="pdfBusy"
+                @click="generatePdf"><i :class="pdfBusy ? 'ri-loader-4-line spin' : 'ri-printer-line'"></i>{{ pdfBusy ?
+                  '正在生成 PDF…' :
+                  '打印/另存为PDF' }}</button><button @click="exportExcel"><i class="ri-file-excel-2-line"></i>导出为
+                Excel</button><button @click="showStats = true"><i class="ri-pie-chart-line"></i>查看统计</button><label
+                class="voice"><span class="voice-label"><i class="ri-volume-up-line"></i>语音播报</span><input
+                  v-model="speech" type="checkbox" role="switch" :aria-checked="speech" /><span class="switch-track"
+                  aria-hidden="true"></span></label><button class="tools-toggle tools-toggle-close" type="button"
+                aria-label="收起功能区" @click="mobileToolsOpen = false"><span>收起</span><i
+                  class="ri-arrow-up-s-line"></i></button>
             </div>
           </aside>
 
           <section class="book-frame">
             <div class="book-toolbar">
               <div><b>本页小计：</b><strong>{{ formatMoney(pageTotal) }}</strong><b>总金额：</b><strong>{{ formatMoney(total)
-                  }}</strong><b>总人数：</b><strong>{{ activeRecords.length }}</strong></div>
+              }}</strong><b>总人数：</b><strong>{{ activeRecords.length }}</strong></div>
               <div class="pager"><button class="pager-arrow prev" aria-label="上一页" :disabled="page <= 1"
                   @click="page--"><span aria-hidden="true"></span></button><b>第 <input v-model.number="page"
                     class="page-number" type="number" min="1" :max="pageCount" /> / {{ pageCount }} 页</b><button
@@ -1049,7 +1079,7 @@ async function generatePdf() {
               <div class="ledger-sheet">
                 <button v-for="(record, index) in pageItems" :key="record.id" class="gift-column" type="button"
                   @click="openRecord(record)"><span class="name-cell"><small>{{ (page - 1) * PAGE_SIZE + index + 1
-                      }}</small><b>{{ record.name.length === 2 ? `${record.name[0]}　${record.name[1]}` : record.name
+                  }}</small><b>{{ record.name.length === 2 ? `${record.name[0]}　${record.name[1]}` : record.name
                       }}</b><em v-if="remarkText(record)">已备注</em></span><span class="type-cell">{{ currentEvent.theme
                         === 'theme-solemn' ? '礼金' : '贺礼' }}</span><span class="amount-cell"><b>{{
                       amountToChinese(record.amount) }}</b><small>{{ formatMoney(record.amount)
@@ -1129,7 +1159,7 @@ async function generatePdf() {
         </div>
         <div class="detail-row">
           <div><b>金额：</b><strong>{{ formatMoney(selectedRecord.amount) }}</strong><small>类型：{{ selectedRecord.method
-              }}</small></div><button @click="startEdit('amount')">修改</button>
+          }}</small></div><button @click="startEdit('amount')">修改</button>
         </div>
         <div class="detail-row">
           <div><b>备注：</b>
@@ -1144,7 +1174,7 @@ async function generatePdf() {
           <summary>查看修改记录（{{ selectedRecord.history.length }}）</summary>
           <ol>
             <li v-for="(item, index) in selectedRecord.history" :key="index"><time>{{ formatDateTime(item.at)
-                }}</time><span>{{ item.text }}</span></li>
+            }}</time><span>{{ item.text }}</span></li>
           </ol>
         </details>
         <footer><button class="danger-outline" :disabled="selectedRecord.abolished" @click="requestAbolish"><i
