@@ -59,3 +59,25 @@ pnpm tauri:build:apk
 ```
 
 Android 构建产物位于 `src-tauri/gen/android/app/build/outputs/`。
+
+## GitHub 云端自动构建
+
+仓库中的 `.github/workflows/build-tauri.yml` 会在以下情况自动运行：
+
+- 推送到 `main` 分支。
+- 推送以 `v` 开头的版本标签，例如 `v0.1.0`。
+- 在 GitHub 仓库的 Actions 页面手动点击 `Run workflow`。
+
+每次构建完成后，可以在该次 Actions 运行页面的 `Artifacts` 区域下载：
+
+- `egift-windows-x64-nsis`：Windows 安装程序。
+- `egift-android-*-apk-debug`：可直接安装的 Android Debug APK。
+
+版本标签构建还会自动创建 GitHub Release，并把 EXE 和 APK 添加到 Release 下载列表。
+
+```bash
+git tag v0.1.0
+git push 电子礼金 v0.1.0
+```
+
+Debug APK 适合自行安装和测试。发布到应用商店前，需要根据 Tauri Android 签名文档配置正式签名证书；证书和密码只能放在 GitHub Secrets 中，不能提交到仓库。
