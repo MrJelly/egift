@@ -125,7 +125,7 @@ src-tauri/gen/android/app/build/outputs/
 
 同时 workflow 会自动创建 GitHub Release：
 
-- 推送到 `main`：创建预发布版本，tag 形如 `main-123`，适合日常测试下载。
+- 推送到 `main`：自动更新固定预发布版本 `main-latest`，适合日常测试下载，不会堆积大量测试版本。
 - 推送 `v*` 标签：创建正式版本，例如 `v0.1.4`。
 
 正式发版示例：

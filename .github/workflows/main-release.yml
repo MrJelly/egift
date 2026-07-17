@@ -150,7 +150,7 @@ jobs:
       - name: 创建预发布 Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG_NAME: main-${{ github.run_number }}
+          TAG_NAME: main-latest
         run: |
           set -euo pipefail
 
@@ -158,11 +158,28 @@ jobs:
           git tag -f "$TAG_NAME" "$GITHUB_SHA"
           git push --force origin "refs/tags/$TAG_NAME"
 
-          mapfile -t files < <(find release-artifacts -type f | sort)
-          if [ "${#files[@]}" -eq 0 ]; then
+          mapfile -t raw_files < <(find release-artifacts -type f | sort)
+          if [ "${#raw_files[@]}" -eq 0 ]; then
             echo "没有找到可发布的构建产物"
             exit 1
           fi
+
+          mkdir -p publish-assets
+          for file in "${raw_files[@]}"; do
+            case "$file" in
+              *.apk)
+                cp "$file" "publish-assets/egift_main_${GITHUB_RUN_NUMBER}_android_arm64_debug.apk"
+                ;;
+              *.exe)
+                cp "$file" "publish-assets/egift_main_${GITHUB_RUN_NUMBER}_windows_x64-setup.exe"
+                ;;
+              *)
+                cp "$file" "publish-assets/$(basename "$file")"
+                ;;
+            esac
+          done
+
+          mapfile -t files < <(find publish-assets -type f | sort)
 
           printf '准备发布以下产物：\n'
           printf '%s\n' "${files[@]}"
