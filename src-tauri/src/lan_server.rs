@@ -10,7 +10,10 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::{net::IpAddr, sync::Arc};
+use std::{
+  net::{IpAddr, Ipv4Addr},
+  sync::Arc,
+};
 use tauri::State as TauriState;
 use tokio::sync::{broadcast, oneshot, Mutex, RwLock};
 use uuid::Uuid;
@@ -70,12 +73,7 @@ pub async fn start_lan_server(
     return Ok(server.info.clone());
   }
 
-  let ip = local_ip_address::local_ip()
-    .map_err(|error| format!("无法获取局域网地址：{error}"))?;
-  let ip = match ip {
-    IpAddr::V4(ip) if !ip.is_loopback() => ip,
-    _ => return Err("没有找到可用的 IPv4 局域网地址，请先连接 Wi-Fi 或开启热点".into()),
-  };
+  let ip = select_lan_ipv4()?;
 
   let listener = tokio::net::TcpListener::bind("0.0.0.0:0")
     .await
@@ -213,4 +211,127 @@ async fn websocket_session(mut socket: WebSocket, state: ViewerState) {
 
 fn unauthorized() -> Response {
   (StatusCode::UNAUTHORIZED, "副屏链接无效或已过期").into_response()
+}
+
+fn select_lan_ipv4() -> Result<Ipv4Addr, String> {
+  let interfaces = local_ip_address::list_afinet_netifas()
+    .map_err(|error| format!("无法读取局域网网卡：{error}"))?;
+  let mut candidates = interfaces
+    .into_iter()
+    .filter_map(|(name, address)| match address {
+      IpAddr::V4(ip) if is_lan_ipv4(ip) && !is_ignored_interface(&name) => {
+        Some((interface_score(&name, ip), name, ip))
+      }
+      _ => None,
+    })
+    .collect::<Vec<_>>();
+
+  candidates.sort_by(|left, right| {
+    right
+      .0
+      .cmp(&left.0)
+      .then_with(|| left.1.cmp(&right.1))
+      .then_with(|| left.2.octets().cmp(&right.2.octets()))
+  });
+
+  candidates
+    .first()
+    .map(|(_, _, ip)| *ip)
+    .ok_or_else(|| {
+      "没有找到可用的局域网地址。请关闭 VPN/代理，并让主设备连接 Wi-Fi、网线或开启热点后重试"
+        .into()
+    })
+}
+
+fn is_lan_ipv4(ip: Ipv4Addr) -> bool {
+  matches!(
+    ip.octets(),
+    [10, _, _, _] | [192, 168, _, _] | [172, 16..=31, _, _]
+  )
+}
+
+fn is_ignored_interface(name: &str) -> bool {
+  let name = name.to_ascii_lowercase();
+  [
+    "vpn", "tun", "tap", "utun", "tailscale", "zerotier", "wireguard", "docker",
+    "veth", "vmware", "virtualbox", "hyper-v", "loopback", "dummy", "p2p", "rmnet",
+    "ccmni", "mobile", "cellular",
+  ]
+  .iter()
+  .any(|marker| name.contains(marker))
+    || name.starts_with("wg")
+    || name.starts_with("pdp")
+}
+
+fn interface_score(name: &str, ip: Ipv4Addr) -> u16 {
+  let name = name.to_ascii_lowercase();
+  let mut score = if name.starts_with("ap") || name.contains("softap") {
+    500
+  } else if ["wi-fi", "wifi", "wireless", "wlan", "swlan"]
+    .iter()
+    .any(|marker| name.contains(marker))
+    || name.starts_with("wl")
+  {
+    400
+  } else if ["ethernet", "ether", "eth"]
+    .iter()
+    .any(|marker| name.contains(marker))
+    || name.starts_with("en")
+  {
+    300
+  } else {
+    100
+  };
+
+  let octets = ip.octets();
+  score += match octets {
+    [192, 168, _, _] => 30,
+    [172, second, _, _] if (16..=31).contains(&second) => 20,
+    [10, _, _, _] => 10,
+    _ => 0,
+  };
+  score
+}
+
+#[cfg(test)]
+mod tests {
+  use super::{interface_score, is_ignored_interface, is_lan_ipv4};
+  use std::net::Ipv4Addr;
+
+  #[test]
+  fn rejects_virtual_and_mobile_interfaces() {
+    for name in ["tun0", "Tailscale", "rmnet_data0", "vEthernet (Hyper-V)", "p2p0"] {
+      assert!(is_ignored_interface(name), "{name} should be ignored");
+    }
+    assert!(!is_ignored_interface("wlan0"));
+    assert!(!is_ignored_interface("Wi-Fi"));
+  }
+
+  #[test]
+  fn accepts_only_rfc1918_lan_addresses() {
+    for ip in [
+      Ipv4Addr::new(192, 168, 1, 20),
+      Ipv4Addr::new(172, 16, 0, 5),
+      Ipv4Addr::new(172, 31, 255, 5),
+      Ipv4Addr::new(10, 0, 0, 8),
+    ] {
+      assert!(is_lan_ipv4(ip), "{ip} should be accepted");
+    }
+    for ip in [
+      Ipv4Addr::new(198, 18, 0, 1),
+      Ipv4Addr::new(172, 32, 0, 1),
+      Ipv4Addr::new(8, 8, 8, 8),
+      Ipv4Addr::LOCALHOST,
+    ] {
+      assert!(!is_lan_ipv4(ip), "{ip} should be rejected");
+    }
+  }
+
+  #[test]
+  fn prefers_wifi_and_hotspot_over_generic_private_interfaces() {
+    let ip = Ipv4Addr::new(192, 168, 1, 20);
+    assert!(interface_score("ap0", ip) > interface_score("wlan0", ip));
+    assert!(interface_score("wlan0", ip) > interface_score("Ethernet", ip));
+    assert!(interface_score("Ethernet", ip) > interface_score("unknown0", ip));
+  }
 }
