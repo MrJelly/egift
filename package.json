@@ -1,6 +1,6 @@
 {
   "name": "gift-ledger",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,9 +13,10 @@
     "tauri:android:init": "tauri android init",
     "tauri:android:dev": "tauri android dev",
     "tauri:build:apk": "tauri android build --apk",
-    "tauri:build:apk:debug": "tauri android build --apk --debug"
+    "tauri:build:apk:debug": "tauri android build --apk --debug --target aarch64"
   },
   "dependencies": {
+    "@tauri-apps/api": "2.11.1",
     "vue": "^3.5.16"
   },
   "devDependencies": {

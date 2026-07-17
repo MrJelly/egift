@@ -25,8 +25,6 @@
 .setup-brand{height:100%;min-height:0}
 .setup-brand>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
 .setup-card{height:100%;min-height:0;overflow-y:auto;scrollbar-gutter:stable;justify-content:safe center}
-.event-dropdown a{display:flex;align-items:center;width:100%;padding:11px 12px;border-radius:7px;color:var(--accent);font-weight:600;text-decoration:none}
-.event-dropdown a:hover{background:var(--accent-soft)}
 .menu-chevron{width:9px;height:9px;margin:-4px 2px 0 5px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .15s ease}
 .menu-chevron.open{margin-top:4px;transform:rotate(225deg)}
 .ledger-sheet{border-top-width:2px;border-left-width:2px}

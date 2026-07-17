@@ -1,4 +1,6 @@
 <script setup>
+import { isTauri } from "@tauri-apps/api/core";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import {
   amountToChinese,
@@ -82,6 +84,10 @@ const guestScreenHref = computed(() => {
   url.searchParams.set("screen", "guest");
   url.searchParams.set("event", currentEvent.value.id);
   return url.toString();
+});
+const guestScreenPath = computed(() => {
+  const url = new URL(guestScreenHref.value);
+  return `${url.pathname}${url.search}`;
 });
 const activeTheme = computed(() => currentEvent.value?.theme || createForm.theme);
 const activeRecords = computed(() =>
@@ -466,6 +472,56 @@ function prepareGuestScreen() {
   setTimeout(syncGuestScreen, 300);
 }
 
+async function openGuestScreen() {
+  prepareGuestScreen();
+
+  if (!isTauri()) {
+    const guestWindow = window.open(guestScreenHref.value, "_blank");
+    if (guestWindow) guestWindow.opener = null;
+    else notify("副屏被浏览器拦截，请允许弹出窗口", "error");
+    return;
+  }
+
+  // Android 手机通常无法同时并排显示两个 Activity，使用当前窗口进入展示模式，
+  // 系统返回键可以回到主屏。桌面端则创建真正的独立副屏窗口。
+  if (/Android/i.test(navigator.userAgent)) {
+    window.location.assign(guestScreenHref.value);
+    return;
+  }
+
+  try {
+    const existing = await WebviewWindow.getByLabel("guest");
+    if (existing) {
+      await existing.show();
+      await existing.setFocus();
+      syncGuestScreen();
+      return;
+    }
+
+    const guestWindow = new WebviewWindow("guest", {
+      url: guestScreenPath.value,
+      title: `${currentEvent.value.name} · 副屏`,
+      width: 1440,
+      height: 900,
+      minWidth: 960,
+      minHeight: 640,
+      center: true,
+      resizable: true,
+    });
+    guestWindow.once("tauri://created", () => {
+      syncGuestScreen();
+      notify("副屏已打开");
+    });
+    guestWindow.once("tauri://error", ({ payload }) => {
+      console.error("创建副屏窗口失败", payload);
+      notify("副屏打开失败，请重新尝试", "error");
+    });
+  } catch (error) {
+    console.error("打开副屏失败", error);
+    notify("副屏打开失败，请重新尝试", "error");
+  }
+}
+
 function openDeleteDialog() {
   showEventMenu.value = false;
   showDelete.value = true;
@@ -628,7 +684,7 @@ async function generatePdf() {
           <transition name="menu-pop"><nav v-if="showEventMenu" class="event-dropdown">
             <button type="button" @click="switchEvent">切换/创建事项</button>
             <button type="button" @click="showBackup = true; showEventMenu = false">备份/恢复数据</button>
-            <a :href="guestScreenHref" target="_blank" rel="noopener" @click="prepareGuestScreen">进入副屏</a>
+            <button type="button" @click="openGuestScreen">进入副屏</button>
             <button type="button" @click="openSettings">设置此事项</button>
             <button class="danger" type="button" @click="openDeleteDialog">删除此事项</button>
           </nav></transition>

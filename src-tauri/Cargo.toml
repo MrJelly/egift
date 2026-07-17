@@ -1,6 +1,6 @@
 [package]
 name = "gift-ledger"
-version = "0.1.0"
+version = "0.1.1"
 description = "电子礼簿桌面与移动应用"
 authors = ["JBD"]
 license = ""
@@ -19,3 +19,17 @@ tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
 tauri = { version = "2.11.3", features = [] }
+
+[profile.dev]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true
