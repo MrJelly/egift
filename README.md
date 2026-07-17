@@ -117,18 +117,23 @@ src-tauri/gen/android/app/build/outputs/
 - 推送 `v*` 版本标签，例如 `v0.1.0`。
 - 在 GitHub Actions 页面手动点击 `Run workflow`。
 
-构建完成后，在对应 Actions 运行页面的 `Artifacts` 区域下载：
+构建完成后，在对应 Actions 运行页面的 `Artifacts` 区域可以下载临时构建产物：
 
 - `egift-windows-x64-nsis`：Windows 安装包。
 - `egift-android-arm64-apk-debug`：Android ARM64 debug APK。
 
-如果是版本标签触发构建，还会自动创建 GitHub Release，并把 EXE 和 APK 上传到 Release 下载列表。
+同时 workflow 会自动创建 GitHub Release：
+
+- 推送到 `main`：创建预发布版本，tag 形如 `main-123`，适合日常测试下载。
+- 推送 `v*` 标签：创建正式版本，例如 `v0.1.4`。
+
+正式发版示例：
 
 示例：
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.4
+git push origin v0.1.4
 ```
 
 ## 数据说明

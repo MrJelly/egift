@@ -15,6 +15,12 @@ concurrency:
 permissions:
   contents: write
 
+env:
+  RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || format('main-{0}', github.run_number) }}
+  RELEASE_NAME: ${{ startsWith(github.ref, 'refs/tags/v') && format('电子礼簿 {0}', github.ref_name) || format('电子礼簿 main 自动构建 #{0}', github.run_number) }}
+  RELEASE_BODY: ${{ startsWith(github.ref, 'refs/tags/v') && '正式版本自动构建的 Windows 安装包与 Android APK。' || format('main 分支自动构建。提交：{0}', github.sha) }}
+  RELEASE_PRERELEASE: ${{ startsWith(github.ref, 'refs/tags/v') && 'false' || 'true' }}
+
 jobs:
   windows:
     name: Windows EXE
@@ -54,11 +60,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: --bundles nsis
-          tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
-          releaseName: 电子礼簿 ${{ github.ref_name }}
-          releaseBody: 自动构建的 Windows 安装包与 Android APK。
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: ${{ env.RELEASE_NAME }}
+          releaseBody: ${{ env.RELEASE_BODY }}
           releaseDraft: false
-          prerelease: false
+          prerelease: ${{ env.RELEASE_PRERELEASE }}
           retryAttempts: 2
           uploadUpdaterJson: false
           uploadUpdaterSignatures: false
@@ -129,11 +135,11 @@ jobs:
         with:
           mobile: android
           args: --apk --debug --target aarch64
-          tagName: ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
-          releaseName: 电子礼簿 ${{ github.ref_name }}
-          releaseBody: 自动构建的 Windows 安装包与 Android APK。
+          tagName: ${{ env.RELEASE_TAG }}
+          releaseName: ${{ env.RELEASE_NAME }}
+          releaseBody: ${{ env.RELEASE_BODY }}
           releaseDraft: false
-          prerelease: false
+          prerelease: ${{ env.RELEASE_PRERELEASE }}
           retryAttempts: 2
           uploadUpdaterJson: false
           uploadUpdaterSignatures: false
