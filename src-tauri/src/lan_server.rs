@@ -246,7 +246,7 @@ fn select_lan_ipv4() -> Result<Ipv4Addr, String> {
 fn is_lan_ipv4(ip: Ipv4Addr) -> bool {
   matches!(
     ip.octets(),
-    [10, _, _, _] | [192, 168, _, _] | [172, 16..=31, _, _]
+    [10, _, _, _] | [192, 168, _, _] | [172, _, _, _] | [100, 64..=127, _, _]
   )
 }
 
@@ -255,7 +255,7 @@ fn is_ignored_interface(name: &str) -> bool {
   [
     "vpn", "tun", "tap", "utun", "tailscale", "zerotier", "wireguard", "docker",
     "veth", "vmware", "virtualbox", "hyper-v", "loopback", "dummy", "p2p", "rmnet",
-    "ccmni", "mobile", "cellular",
+    "ccmni", "mobile", "cellular", "mihomo", "clash", "wintun", "meta tunnel",
   ]
   .iter()
   .any(|marker| name.contains(marker))
@@ -287,7 +287,9 @@ fn interface_score(name: &str, ip: Ipv4Addr) -> u16 {
   score += match octets {
     [192, 168, _, _] => 30,
     [172, second, _, _] if (16..=31).contains(&second) => 20,
+    [172, _, _, _] => 15,
     [10, _, _, _] => 10,
+    [100, 64..=127, _, _] => 5,
     _ => 0,
   };
   score
@@ -308,18 +310,19 @@ mod tests {
   }
 
   #[test]
-  fn accepts_only_rfc1918_lan_addresses() {
+  fn accepts_common_lan_and_carrier_addresses() {
     for ip in [
       Ipv4Addr::new(192, 168, 1, 20),
       Ipv4Addr::new(172, 16, 0, 5),
       Ipv4Addr::new(172, 31, 255, 5),
+      Ipv4Addr::new(172, 168, 8, 66),
       Ipv4Addr::new(10, 0, 0, 8),
+      Ipv4Addr::new(100, 67, 223, 126),
     ] {
       assert!(is_lan_ipv4(ip), "{ip} should be accepted");
     }
     for ip in [
       Ipv4Addr::new(198, 18, 0, 1),
-      Ipv4Addr::new(172, 32, 0, 1),
       Ipv4Addr::new(8, 8, 8, 8),
       Ipv4Addr::LOCALHOST,
     ] {

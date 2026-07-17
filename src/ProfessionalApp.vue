@@ -83,8 +83,36 @@ const settingsForm = reactive({
   minSpeechAmount: 0,
   hidePrivacy: false,
 });
+const viewportSize = reactive({
+  width: window.innerWidth,
+  height: window.innerHeight,
+});
 
 const currentEvent = computed(() => events.value.find((event) => event.id === activeId.value));
+const isLandscapeLayout = computed(() => viewportSize.width >= viewportSize.height);
+const mainStageStyle = computed(() => {
+  const safeGap = 0;
+  const availableWidth = Math.max(1, viewportSize.width - safeGap * 2);
+  const availableHeight = Math.max(1, viewportSize.height - safeGap * 2);
+  const scale = Math.max(0.1, isLandscapeLayout.value ? availableHeight / 700 : availableWidth / 720);
+  const designWidth = availableWidth / scale;
+  return {
+    "--main-layout-width": `${designWidth}px`,
+    "--main-layout-height": isLandscapeLayout.value ? `700px` : "auto",
+    "--main-layout-scale": scale.toFixed(4),
+  };
+});
+const setupStageStyle = computed(() => {
+  const availableWidth = Math.max(1, viewportSize.width);
+  const availableHeight = Math.max(1, viewportSize.height);
+  const scale = Math.max(0.1, isLandscapeLayout.value ? availableHeight / 650 : availableWidth / 560);
+  const designWidth = availableWidth / scale;
+  return {
+    "--setup-layout-width": `${designWidth}px`,
+    "--setup-layout-height": isLandscapeLayout.value ? `650px` : "auto",
+    "--setup-layout-scale": scale.toFixed(4),
+  };
+});
 const guestScreenHref = computed(() => {
   if (!currentEvent.value) return "#";
   const url = new URL(window.location.href);
@@ -150,6 +178,9 @@ onMounted(() => {
       if (data?.type === "guest-ready") syncGuestScreen();
     };
   }
+  updateViewportSize();
+  window.addEventListener("resize", updateViewportSize, { passive: true });
+  window.addEventListener("orientationchange", updateViewportSize, { passive: true });
   restoreLanSession();
 });
 
@@ -157,7 +188,14 @@ onBeforeUnmount(() => {
   syncChannel?.close();
   clearTimeout(toastTimer);
   clearTimeout(lanSyncTimer);
+  window.removeEventListener("resize", updateViewportSize);
+  window.removeEventListener("orientationchange", updateViewportSize);
 });
+
+function updateViewportSize() {
+  viewportSize.width = window.innerWidth;
+  viewportSize.height = window.innerHeight;
+}
 
 function normalizeEvent(event) {
   return {
@@ -860,7 +898,7 @@ async function generatePdf() {
   <main class="pro-app" :class="activeTheme">
     <transition name="toast"><div v-if="toast" class="toast-message" :class="toast.type"><i :class="toast.type === 'error' ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'"></i>{{ toast.message }}</div></transition>
 
-    <section v-if="!unlocked" class="setup-screen">
+    <section v-if="!unlocked" class="setup-screen scaled-setup" :class="isLandscapeLayout ? 'setup-landscape' : 'setup-portrait'" :style="setupStageStyle">
       <div class="setup-brand">
         <img src="/assets/gift-cover-front.jpg" alt="礼簿封面" />
         <div><span>GIFT BOOK</span><h1>{{ activeTheme === 'theme-solemn' ? '奠仪礼簿' : '嘉宾礼簿' }}</h1><p>{{ activeTheme === 'theme-solemn' ? '慎终追远 · 礼敬故人' : '传统礼序 · 数字新章' }}</p></div>
@@ -887,7 +925,8 @@ async function generatePdf() {
       </div>
     </section>
 
-    <section v-else class="main-screen" @click="showEventMenu = false">
+    <section v-else class="main-stage scaled-layout" :class="isLandscapeLayout ? 'scaled-landscape' : 'scaled-portrait'" :style="mainStageStyle">
+      <div class="main-screen" @click="showEventMenu = false">
       <header>
         <div class="event-menu-wrap" @click.stop>
           <button class="event-title" type="button" :aria-expanded="showEventMenu" @click="showEventMenu = !showEventMenu">{{ currentEvent.name }}<span class="menu-chevron" :class="{ open: showEventMenu }" aria-hidden="true"></span></button>
@@ -928,6 +967,7 @@ async function generatePdf() {
             <div v-for="n in Math.max(0, PAGE_SIZE - pageItems.length)" :key="`empty-${n}`" class="gift-column empty"><span class="name-cell"></span><span class="type-cell">{{ currentEvent.theme === 'theme-solemn' ? '礼金' : '贺礼' }}</span><span class="amount-cell"></span></div>
           </div></div>
         </section>
+      </div>
       </div>
     </section>
 

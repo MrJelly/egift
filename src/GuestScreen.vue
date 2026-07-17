@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 import { amountToChinese, formatMoney } from "./utils/giftBookFormat.js";
 
 const EVENTS_KEY = "vue-gift-book-events-v1";
@@ -10,6 +10,26 @@ const events = ref(readEvents());
 const eventId = ref(new URLSearchParams(window.location.search).get("event") || localStorage.getItem(GUEST_EVENT_KEY) || "");
 const page = ref(1);
 let channel;
+
+const viewportSize = reactive({
+  width: window.innerWidth,
+  height: window.innerHeight,
+});
+
+const isLandscapeLayout = computed(() => viewportSize.width >= viewportSize.height);
+
+const guestStageStyle = computed(() => {
+  const safeGap = 0;
+  const availableWidth = Math.max(1, viewportSize.width - safeGap * 2);
+  const availableHeight = Math.max(1, viewportSize.height - safeGap * 2);
+  const designWidth = 1280;
+  const scale = Math.max(0.1, availableWidth / designWidth);
+  return {
+    "--guest-layout-width": `${designWidth}px`,
+    "--guest-layout-height": isLandscapeLayout.value ? `${(availableHeight / scale).toFixed(2)}px` : "auto",
+    "--guest-layout-scale": scale.toFixed(4),
+  };
+});
 
 const currentEvent = computed(() => events.value.find((event) => event.id === eventId.value));
 const records = computed(() =>
@@ -53,8 +73,16 @@ function onStorage(event) {
   }
 }
 
+function updateViewportSize() {
+  viewportSize.width = window.innerWidth;
+  viewportSize.height = window.innerHeight;
+}
+
 onMounted(() => {
   window.addEventListener("storage", onStorage);
+  updateViewportSize();
+  window.addEventListener("resize", updateViewportSize, { passive: true });
+  window.addEventListener("orientationchange", updateViewportSize, { passive: true });
   if ("BroadcastChannel" in window) {
     channel = new BroadcastChannel("gift-book-sync");
     channel.onmessage = ({ data }) => sync(data);
@@ -64,19 +92,21 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("storage", onStorage);
+  window.removeEventListener("resize", updateViewportSize);
+  window.removeEventListener("orientationchange", updateViewportSize);
   channel?.close();
 });
 </script>
 
 <template>
-  <main class="guest-app" :class="currentEvent?.theme || 'theme-festive'">
+  <main class="guest-app guest-scaled-layout" :class="[currentEvent?.theme || 'theme-festive', isLandscapeLayout ? 'guest-landscape' : 'guest-portrait']" :style="guestStageStyle">
     <section v-if="!currentEvent" class="guest-waiting">
       <i class="ri-broadcast-line"></i>
       <h1>副屏等待连接</h1>
       <p>请在主屏的事项菜单中重新点击“进入副屏”。</p>
     </section>
 
-    <template v-else>
+    <div v-else class="guest-container">
       <header class="guest-header">
         <div><small>电子礼簿 · 副屏</small><h1>{{ currentEvent.name }}</h1></div>
         <div class="guest-totals"><span>本页小计 <b>{{ formatMoney(pageTotal) }}</b></span><span>总金额 <b>{{ formatMoney(total) }}</b></span><span>总人数 <b>{{ records.length }}</b></span></div>
@@ -84,17 +114,19 @@ onBeforeUnmount(() => {
 
       <section class="guest-book">
         <div class="guest-pager"><button class="guest-pager-arrow prev" aria-label="上一页" :disabled="page <= 1" @click="page--"><span aria-hidden="true"></span></button><b>第 {{ page }} / {{ pageCount }} 页</b><button class="guest-pager-arrow next" aria-label="下一页" :disabled="page >= pageCount" @click="page++"><span aria-hidden="true"></span></button></div>
-        <div class="guest-ledger">
-          <article v-for="record in pageItems" :key="record.id" class="guest-column" :class="{ latest: record.id === latestId }">
-            <div class="guest-name">{{ maskName(record) }}</div>
-            <div class="guest-label">{{ currentEvent.theme === 'theme-solemn' ? '礼金' : '贺礼' }}</div>
-            <div class="guest-amount"><span>{{ amountToChinese(record.amount) }}</span><small>{{ formatMoney(record.amount) }}</small></div>
-          </article>
-          <article v-for="n in Math.max(0, PAGE_SIZE - pageItems.length)" :key="`empty-${n}`" class="guest-column empty">
-            <div class="guest-name"></div><div class="guest-label">{{ currentEvent.theme === 'theme-solemn' ? '礼金' : '贺礼' }}</div><div class="guest-amount"></div>
-          </article>
+        <div class="guest-ledger-scroll">
+          <div class="guest-ledger">
+            <article v-for="record in pageItems" :key="record.id" class="guest-column" :class="{ latest: record.id === latestId }">
+              <div class="guest-name">{{ maskName(record) }}</div>
+              <div class="guest-label">{{ currentEvent.theme === 'theme-solemn' ? '礼金' : '贺礼' }}</div>
+              <div class="guest-amount"><span>{{ amountToChinese(record.amount) }}</span><small>{{ formatMoney(record.amount) }}</small></div>
+            </article>
+            <article v-for="n in Math.max(0, PAGE_SIZE - pageItems.length)" :key="`empty-${n}`" class="guest-column empty">
+              <div class="guest-name"></div><div class="guest-label">{{ currentEvent.theme === 'theme-solemn' ? '礼金' : '贺礼' }}</div><div class="guest-amount"></div>
+            </article>
+          </div>
         </div>
       </section>
-    </template>
+    </div>
   </main>
 </template>
