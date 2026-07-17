@@ -1,13 +1,13 @@
-name: 构建电子礼簿
+name: main 自动发版
 
 on:
   workflow_dispatch:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
 
 concurrency:
-  group: tauri-build-${{ github.ref }}
+  group: main-release-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -46,23 +46,23 @@ jobs:
       - name: 安装前端依赖
         run: pnpm install --frozen-lockfile
 
-      - name: 构建 Windows 安装包
+      - name: 构建 Windows 安装包并发布预览版
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           args: --bundles nsis
-          tagName: ${{ github.ref_name }}
-          releaseName: 电子礼簿 ${{ github.ref_name }}
-          releaseBody: 正式版本自动构建的 Windows 安装包与 Android APK。
+          tagName: main-${{ github.run_number }}
+          releaseName: "电子礼簿 main 自动构建 #${{ github.run_number }}"
+          releaseBody: main 分支自动构建。提交：${{ github.sha }}
           releaseDraft: false
-          prerelease: false
+          prerelease: true
           retryAttempts: 2
           uploadUpdaterJson: false
           uploadUpdaterSignatures: false
           uploadWorkflowArtifacts: true
           workflowArtifactNamePattern: egift-windows-x64-[bundle]
-          releaseAssetNamePattern: egift_[version]_windows_x64[setup].[ext]
+          releaseAssetNamePattern: egift_main_${{ github.run_number }}_windows_x64[setup].[ext]
 
   android:
     name: Android APK
@@ -119,7 +119,7 @@ jobs:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: pnpm tauri android init --ci
 
-      - name: 构建可安装 APK
+      - name: 构建 APK 并发布预览版
         uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -127,14 +127,14 @@ jobs:
         with:
           mobile: android
           args: --apk --debug --target aarch64
-          tagName: ${{ github.ref_name }}
-          releaseName: 电子礼簿 ${{ github.ref_name }}
-          releaseBody: 正式版本自动构建的 Windows 安装包与 Android APK。
+          tagName: main-${{ github.run_number }}
+          releaseName: "电子礼簿 main 自动构建 #${{ github.run_number }}"
+          releaseBody: main 分支自动构建。提交：${{ github.sha }}
           releaseDraft: false
-          prerelease: false
+          prerelease: true
           retryAttempts: 2
           uploadUpdaterJson: false
           uploadUpdaterSignatures: false
           uploadWorkflowArtifacts: true
           workflowArtifactNamePattern: egift-android-arm64-[bundle]-[mode]
-          releaseAssetNamePattern: egift_[version]_android_arm64_[mode].[ext]
+          releaseAssetNamePattern: egift_main_${{ github.run_number }}_android_arm64_[mode].[ext]

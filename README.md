@@ -111,11 +111,12 @@ src-tauri/gen/android/app/build/outputs/
 
 ## GitHub 自动构建
 
-仓库内 `.github/workflows/build-tauri.yml` 会在以下情况自动运行：
+仓库内包含两套自动构建流程：
 
-- 推送到 `main` 分支。
-- 推送 `v*` 版本标签，例如 `v0.1.0`。
-- 在 GitHub Actions 页面手动点击 `Run workflow`。
+- `.github/workflows/main-release.yml`：推送到 `main` 后自动构建并创建预发布 Release。
+- `.github/workflows/build-tauri.yml`：推送 `v*` 版本标签后自动构建并创建正式 Release。
+
+两个 workflow 都支持在 GitHub Actions 页面手动点击 `Run workflow`。
 
 构建完成后，在对应 Actions 运行页面的 `Artifacts` 区域可以下载临时构建产物：
 
