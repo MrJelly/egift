@@ -32,6 +32,8 @@ const unlockPassword = ref("");
 const page = ref(1);
 const query = ref("");
 const speech = ref(true);
+const mobileToolsOpen = ref(false);
+const showUnlockDialog = ref(false);
 const showEventMenu = ref(false);
 const showStats = ref(false);
 const showBackup = ref(false);
@@ -288,6 +290,7 @@ function createEvent() {
   events.value.push(event);
   activeId.value = event.id;
   unlocked.value = true;
+  showUnlockDialog.value = false;
   resetCreate();
   notify("事项已创建");
 }
@@ -301,13 +304,26 @@ function resetCreate() {
 function selectEvent(id) {
   activeId.value = id;
   unlockPassword.value = "";
+  showUnlockDialog.value = false;
 }
 
 function enterSelectedEvent() {
   if (!currentEvent.value) return notify("请先选择一个事项", "error");
-  if (currentEvent.value.passwordHash && hash(unlockPassword.value) !== currentEvent.value.passwordHash) {
+  if (currentEvent.value.passwordHash) {
+    unlockPassword.value = "";
+    showUnlockDialog.value = true;
+    return;
+  }
+  unlocked.value = true;
+  page.value = 1;
+}
+
+function confirmUnlock() {
+  if (!currentEvent.value) return;
+  if (hash(unlockPassword.value) !== currentEvent.value.passwordHash) {
     return notify("管理密码错误", "error");
   }
+  showUnlockDialog.value = false;
   unlocked.value = true;
   page.value = 1;
 }
@@ -318,6 +334,7 @@ function switchEvent() {
   unlocked.value = false;
   activeId.value = "";
   unlockPassword.value = "";
+  showUnlockDialog.value = false;
 }
 
 function addGift() {
@@ -911,97 +928,319 @@ async function generatePdf() {
 
 <template>
   <main class="pro-app" :class="activeTheme">
-    <transition name="toast"><div v-if="toast" class="toast-message" :class="toast.type"><i :class="toast.type === 'error' ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'"></i>{{ toast.message }}</div></transition>
+    <transition name="toast">
+      <div v-if="toast" class="toast-message" :class="toast.type"><i
+          :class="toast.type === 'error' ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'"></i>{{ toast.message }}
+      </div>
+    </transition>
 
-    <section v-if="!unlocked" class="setup-screen scaled-setup" :class="isLandscapeLayout ? 'setup-landscape' : 'setup-portrait'" :style="setupStageStyle">
+    <section v-if="!unlocked" class="setup-screen scaled-setup"
+      :class="isLandscapeLayout ? 'setup-landscape' : 'setup-portrait'" :style="setupStageStyle">
       <div class="setup-brand">
         <img src="/assets/gift-cover-front.jpg" alt="礼簿封面" />
-        <div><span>GIFT BOOK</span><h1>{{ activeTheme === 'theme-solemn' ? '奠仪礼簿' : '嘉宾礼簿' }}</h1><p>{{ activeTheme === 'theme-solemn' ? '慎终追远 · 礼敬故人' : '传统礼序 · 数字新章' }}</p></div>
+        <div><span>GIFT BOOK</span>
+          <h1>{{ activeTheme === 'theme-solemn' ? '奠仪礼簿' : '嘉宾礼簿' }}</h1>
+          <p>{{ activeTheme === 'theme-solemn' ? '慎终追远 · 礼敬故人' : '传统礼序 · 数字新章' }}</p>
+        </div>
       </div>
       <div class="setup-card">
         <h1 class="setup-title">电子礼簿系统</h1>
         <section v-if="events.length" class="event-select">
           <h2>选择事项</h2>
           <div class="event-entry-row">
-            <select :value="activeId" @change="selectEvent($event.target.value)"><option value="">请选择一个事项</option><option v-for="event in events" :key="event.id" :value="event.id">{{ event.name }}</option></select>
+            <select :value="activeId" @change="selectEvent($event.target.value)">
+              <option value="">请选择一个事项</option>
+              <option v-for="event in events" :key="event.id" :value="event.id">{{ event.name }}</option>
+            </select>
             <button type="button" @click="enterSelectedEvent">进入</button>
           </div>
-          <input v-if="activeId" v-model="unlockPassword" type="password" placeholder="输入管理密码" @keydown.enter="enterSelectedEvent" />
         </section>
 
         <form class="create-event" @submit.prevent="createEvent">
           <h2>{{ events.length ? '或创建新事项' : '创建新事项' }}</h2>
           <input v-model="createForm.name" required placeholder="事项名称（例如：张三李四新婚之喜）" />
-          <div class="two"><label>开始时间<input v-model="createForm.start" type="datetime-local" required /></label><label>结束时间<input v-model="createForm.end" type="datetime-local" required /></label></div>
+          <div class="two"><label>开始时间<input v-model="createForm.start" type="datetime-local"
+                required /></label><label>结束时间<input v-model="createForm.end" type="datetime-local" required /></label>
+          </div>
           <input v-model="createForm.password" type="password" minlength="4" required placeholder="设置管理密码（请牢记）" />
-          <details><summary>更多设置</summary><select v-model="createForm.theme"><option value="theme-festive">喜庆红（喜事）</option><option value="theme-solemn">肃穆灰（白事）</option></select><input v-model="createForm.recorder" placeholder="记账人（选填）" /></details>
+          <details>
+            <summary>更多设置</summary><select v-model="createForm.theme">
+              <option value="theme-festive">喜庆红（喜事）</option>
+              <option value="theme-solemn">肃穆灰（白事）</option>
+            </select><input v-model="createForm.recorder" placeholder="记账人（选填）" />
+          </details>
           <button class="primary" type="submit">创建并进入</button>
         </form>
       </div>
     </section>
 
-    <section v-else class="main-stage scaled-layout" :class="isLandscapeLayout ? 'scaled-landscape' : 'scaled-portrait'" :style="mainStageStyle">
+    <section v-else class="main-stage scaled-layout" :class="isLandscapeLayout ? 'scaled-landscape' : 'scaled-portrait'"
+      :style="mainStageStyle">
       <div class="main-screen" @click="showEventMenu = false">
-      <header>
-        <div class="event-menu-wrap" @click.stop>
-          <button class="event-title" type="button" :aria-expanded="showEventMenu" @click="showEventMenu = !showEventMenu">{{ currentEvent.name }}<span class="menu-chevron" :class="{ open: showEventMenu }" aria-hidden="true"></span></button>
-          <transition name="menu-pop"><nav v-if="showEventMenu" class="event-dropdown">
-            <button type="button" @click="switchEvent">切换/创建事项</button>
-            <button type="button" @click="showBackup = true; showEventMenu = false">备份/恢复数据</button>
-            <button type="button" @click="openGuestScreen">本机打开副屏</button>
-            <button type="button" :disabled="lanBusy" @click="openLanShare">{{ lanSession ? '查看局域网副屏二维码' : '开启局域网副屏（扫码）' }}</button>
-            <button type="button" @click="openSettings">设置此事项</button>
-            <button class="danger" type="button" @click="openDeleteDialog">删除此事项</button>
-          </nav></transition>
+        <header>
+          <div class="event-menu-wrap" @click.stop>
+            <button class="event-title" type="button" :aria-expanded="showEventMenu"
+              @click="showEventMenu = !showEventMenu">{{ currentEvent.name }}<span class="menu-chevron"
+                :class="{ open: showEventMenu }" aria-hidden="true"></span></button>
+            <transition name="menu-pop">
+              <nav v-if="showEventMenu" class="event-dropdown">
+                <button type="button" @click="switchEvent">切换/创建事项</button>
+                <button type="button" @click="showBackup = true; showEventMenu = false">备份/恢复数据</button>
+                <button type="button" @click="openGuestScreen">本机打开副屏</button>
+                <button type="button" :disabled="lanBusy" @click="openLanShare">{{ lanSession ? '查看局域网副屏二维码' :
+                  '开启局域网副屏（扫码）' }}</button>
+                <button type="button" @click="openSettings">设置此事项</button>
+                <button class="danger" type="button" @click="openDeleteDialog">删除此事项</button>
+              </nav>
+            </transition>
+          </div>
+        </header>
+
+        <div class="workspace-grid">
+          <aside class="entry-panel">
+            <h2>礼金录入</h2>
+            <form @submit.prevent="addGift">
+              <input v-model="giftForm.name" required placeholder="姓名" />
+              <input v-model="giftForm.amount" required type="number" min="0.01" step="0.01" placeholder="金额（元）" />
+              <div class="methods"><span>收款类型：</span><label v-for="method in PAYMENT_METHODS" :key="method"><input
+                    v-model="giftForm.method" type="radio" :value="method" />{{ method }}</label></div>
+              <textarea v-model="giftForm.custom" rows="2" placeholder="备注内容（选填）"></textarea>
+              <div class="remark-buttons"><span>更多备注：</span><button v-for="([field, label]) in REMARK_FIELDS"
+                  :key="field" type="button" :class="{ active: remarkFields.includes(field) }"
+                  @click="toggleRemarkField(field)">{{ label }}</button></div>
+              <input v-if="remarkFields.includes('gift')" v-model="giftForm.gift" placeholder="礼品" />
+              <input v-if="remarkFields.includes('relation')" v-model="giftForm.relation" placeholder="关系" />
+              <input v-if="remarkFields.includes('phone')" v-model="giftForm.phone" placeholder="电话" />
+              <input v-if="remarkFields.includes('address')" v-model="giftForm.address" placeholder="住址" />
+              <button class="primary entry-submit">确认录入</button>
+            </form>
+
+            <button v-if="!mobileToolsOpen" class="tools-toggle tools-toggle-open" type="button"
+              :aria-expanded="mobileToolsOpen" aria-label="展开功能区" @click="mobileToolsOpen = true"><span>展开</span><i
+                class="ri-arrow-down-s-line"></i></button>
+            <div class="tools" :class="{ open: mobileToolsOpen }">
+              <h3>功能区</h3>
+              <div class="search"><input v-model="query" placeholder="按姓名或备注查找…"
+                  @keydown.enter.prevent="openSearchResults" /><button type="button" aria-label="搜索礼金记录"
+                  @click="openSearchResults"><i class="ri-search-line"></i></button></div><button class="primary"
+                :disabled="pdfBusy" @click="generatePdf"><i
+                  :class="pdfBusy ? 'ri-loader-4-line spin' : 'ri-printer-line'"></i>{{ pdfBusy ? '正在生成 PDF…' :
+                    '打印/另存为PDF' }}</button><button @click="exportExcel"><i class="ri-file-excel-2-line"></i>导出为
+                Excel</button><button class="primary" @click="showStats = true"><i
+                  class="ri-pie-chart-line"></i>查看统计</button><label class="voice"><span class="voice-label"><i
+                    class="ri-volume-up-line"></i>语音播报</span><input v-model="speech" type="checkbox" role="switch"
+                  :aria-checked="speech" /><span class="switch-track" aria-hidden="true"></span></label><button
+                class="tools-toggle tools-toggle-close" type="button" aria-label="收起功能区"
+                @click="mobileToolsOpen = false"><i class="ri-arrow-up-s-line"></i></button>
+            </div>
+          </aside>
+
+          <section class="book-frame">
+            <div class="book-toolbar">
+              <div><b>本页小计：</b><strong>{{ formatMoney(pageTotal) }}</strong><b>总金额：</b><strong>{{ formatMoney(total)
+                  }}</strong><b>总人数：</b><strong>{{ activeRecords.length }}</strong></div>
+              <div class="pager"><button class="pager-arrow prev" aria-label="上一页" :disabled="page <= 1"
+                  @click="page--"><span aria-hidden="true"></span></button><b>第 <input v-model.number="page"
+                    class="page-number" type="number" min="1" :max="pageCount" /> / {{ pageCount }} 页</b><button
+                  class="pager-arrow next" aria-label="下一页" :disabled="page >= pageCount" @click="page++"><span
+                    aria-hidden="true"></span></button></div>
+            </div>
+            <div class="ledger-scroll">
+              <div class="ledger-sheet">
+                <button v-for="(record, index) in pageItems" :key="record.id" class="gift-column" type="button"
+                  @click="openRecord(record)"><span class="name-cell"><small>{{ (page - 1) * PAGE_SIZE + index + 1
+                      }}</small><b>{{ record.name.length === 2 ? `${record.name[0]}　${record.name[1]}` : record.name
+                      }}</b><em v-if="remarkText(record)">已备注</em></span><span class="type-cell">{{ currentEvent.theme
+                        === 'theme-solemn' ? '礼金' : '贺礼' }}</span><span class="amount-cell"><b>{{
+                      amountToChinese(record.amount) }}</b><small>{{ formatMoney(record.amount)
+                      }}</small></span></button>
+                <div v-for="n in Math.max(0, PAGE_SIZE - pageItems.length)" :key="`empty-${n}`"
+                  class="gift-column empty"><span class="name-cell"></span><span class="type-cell">{{ currentEvent.theme
+                    === 'theme-solemn' ? '礼金' : '贺礼' }}</span><span class="amount-cell"></span></div>
+              </div>
+            </div>
+          </section>
         </div>
-      </header>
-
-      <div class="workspace-grid">
-        <aside class="entry-panel">
-          <h2>礼金录入</h2>
-          <form @submit.prevent="addGift">
-            <input v-model="giftForm.name" required placeholder="姓名" />
-            <input v-model="giftForm.amount" required type="number" min="0.01" step="0.01" placeholder="金额（元）" />
-            <div class="methods"><span>收款类型：</span><label v-for="method in PAYMENT_METHODS" :key="method"><input v-model="giftForm.method" type="radio" :value="method" />{{ method }}</label></div>
-            <textarea v-model="giftForm.custom" rows="2" placeholder="备注内容（选填）"></textarea>
-            <div class="remark-buttons"><span>更多备注：</span><button v-for="([field,label]) in REMARK_FIELDS" :key="field" type="button" :class="{ active: remarkFields.includes(field) }" @click="toggleRemarkField(field)">{{ label }}</button></div>
-            <input v-if="remarkFields.includes('gift')" v-model="giftForm.gift" placeholder="礼品" />
-            <input v-if="remarkFields.includes('relation')" v-model="giftForm.relation" placeholder="关系" />
-            <input v-if="remarkFields.includes('phone')" v-model="giftForm.phone" placeholder="电话" />
-            <input v-if="remarkFields.includes('address')" v-model="giftForm.address" placeholder="住址" />
-            <button class="primary entry-submit">确认录入</button>
-          </form>
-
-          <div class="tools"><h3>功能区</h3><div class="search"><input v-model="query" placeholder="按姓名或备注查找…" @keydown.enter.prevent="openSearchResults" /><button type="button" aria-label="搜索礼金记录" @click="openSearchResults"><i class="ri-search-line"></i></button></div><button class="primary" :disabled="pdfBusy" @click="generatePdf"><i :class="pdfBusy ? 'ri-loader-4-line spin' : 'ri-printer-line'"></i>{{ pdfBusy ? '正在生成 PDF…' : '打印/另存为PDF' }}</button><button @click="exportExcel"><i class="ri-file-excel-2-line"></i>导出为 Excel</button><button class="primary" @click="showStats = true"><i class="ri-pie-chart-line"></i>查看统计</button><label class="voice"><span class="voice-label"><i class="ri-volume-up-line"></i>语音播报</span><input v-model="speech" type="checkbox" role="switch" :aria-checked="speech" /><span class="switch-track" aria-hidden="true"></span></label></div>
-        </aside>
-
-        <section class="book-frame">
-          <div class="book-toolbar"><div><b>本页小计：</b><strong>{{ formatMoney(pageTotal) }}</strong><b>总金额：</b><strong>{{ formatMoney(total) }}</strong><b>总人数：</b><strong>{{ activeRecords.length }}</strong></div><div class="pager"><button class="pager-arrow prev" aria-label="上一页" :disabled="page <= 1" @click="page--"><span aria-hidden="true"></span></button><b>第 <input v-model.number="page" class="page-number" type="number" min="1" :max="pageCount" /> / {{ pageCount }} 页</b><button class="pager-arrow next" aria-label="下一页" :disabled="page >= pageCount" @click="page++"><span aria-hidden="true"></span></button></div></div>
-          <div class="ledger-scroll"><div class="ledger-sheet">
-            <button v-for="(record,index) in pageItems" :key="record.id" class="gift-column" type="button" @click="openRecord(record)"><span class="name-cell"><small>{{ (page - 1) * PAGE_SIZE + index + 1 }}</small><b>{{ record.name.length === 2 ? `${record.name[0]}　${record.name[1]}` : record.name }}</b><em v-if="remarkText(record)">已备注</em></span><span class="type-cell">{{ currentEvent.theme === 'theme-solemn' ? '礼金' : '贺礼' }}</span><span class="amount-cell"><b>{{ amountToChinese(record.amount) }}</b><small>{{ formatMoney(record.amount) }}</small></span></button>
-            <div v-for="n in Math.max(0, PAGE_SIZE - pageItems.length)" :key="`empty-${n}`" class="gift-column empty"><span class="name-cell"></span><span class="type-cell">{{ currentEvent.theme === 'theme-solemn' ? '礼金' : '贺礼' }}</span><span class="amount-cell"></span></div>
-          </div></div>
-        </section>
-      </div>
       </div>
     </section>
 
-    <div v-if="showSearchResults" class="modal-backdrop" @click.self="showSearchResults = false"><section class="modal-card search-results-card"><button class="modal-close" type="button" aria-label="关闭搜索结果" @click="showSearchResults = false"><span aria-hidden="true">×</span></button><h2>“{{ query.trim() }}”的搜索结果</h2><div v-if="searchResults.length" class="search-result-list"><article v-for="record in searchResults" :key="record.id" class="search-result-item"><div><b>姓名：<span>{{ record.name }}</span></b><p>金额：{{ formatMoney(record.amount) }}（{{ record.method }}）</p><small v-if="remarkText(record)">备注：{{ remarkText(record) }}</small></div><button class="primary" type="button" @click="openSearchRecord(record)">查看详情</button></article></div><div v-else class="search-empty"><i class="ri-search-eye-line"></i><p>没有找到匹配的礼金记录</p><small>可以尝试输入完整姓名、收款类型或备注关键词</small></div><footer><button class="secondary" type="button" @click="showSearchResults = false">关闭</button></footer></section></div>
+    <div v-if="showSearchResults" class="modal-backdrop" @click.self="showSearchResults = false">
+      <section class="modal-card search-results-card"><button class="modal-close" type="button" aria-label="关闭搜索结果"
+          @click="showSearchResults = false"><span aria-hidden="true">×</span></button>
+        <h2>“{{ query.trim() }}”的搜索结果</h2>
+        <div v-if="searchResults.length" class="search-result-list">
+          <article v-for="record in searchResults" :key="record.id" class="search-result-item">
+            <div><b>姓名：<span>{{ record.name }}</span></b>
+              <p>金额：{{ formatMoney(record.amount) }}（{{ record.method }}）</p><small v-if="remarkText(record)">备注：{{
+                remarkText(record) }}</small>
+            </div><button class="primary" type="button" @click="openSearchRecord(record)">查看详情</button>
+          </article>
+        </div>
+        <div v-else class="search-empty"><i class="ri-search-eye-line"></i>
+          <p>没有找到匹配的礼金记录</p><small>可以尝试输入完整姓名、收款类型或备注关键词</small>
+        </div>
+        <footer><button class="secondary" type="button" @click="showSearchResults = false">关闭</button></footer>
+      </section>
+    </div>
 
-    <div v-if="showLanShare && lanSession" class="modal-backdrop" @click.self="showLanShare = false"><section class="modal-card lan-share-card"><button class="modal-close" type="button" aria-label="关闭二维码" @click="showLanShare = false"><span aria-hidden="true">×</span></button><h2>局域网副屏</h2><p class="lan-share-status"><span></span>正在共享“{{ currentEvent.name }}”的只读数据</p><div class="lan-share-grid"><div class="lan-qr"><img v-if="lanQrCode" :src="lanQrCode" alt="手机副屏二维码" /><i v-else class="ri-loader-4-line spin"></i></div><div class="lan-share-info"><h3>手机扫码即可查看</h3><ol><li>手机和平板连接同一个 Wi-Fi 或热点</li><li>使用微信或系统相机扫描二维码</li><li>在浏览器中打开，录入后会自动同步</li><li>若 Windows 首次弹出防火墙提示，请选择“允许访问”</li></ol><label>访问地址<div class="lan-url"><code>{{ lanSession.url }}</code><button type="button" @click="copyLanUrl">复制</button></div></label><p class="lan-warning"><i class="ri-shield-check-line"></i>副屏只能查看，不能修改礼金；停止共享后此链接立即失效。</p></div></div><footer><button class="danger-outline" type="button" :disabled="lanBusy" @click="stopLanShare">停止共享</button><button class="secondary" type="button" @click="showLanShare = false">暂时关闭二维码</button></footer></section></div>
+    <div v-if="showUnlockDialog && currentEvent" class="modal-backdrop" @click.self="showUnlockDialog = false">
+      <form class="modal-card unlock-card" @submit.prevent="confirmUnlock"><button class="modal-close" type="button"
+          aria-label="关闭密码输入" @click="showUnlockDialog = false"><span aria-hidden="true">×</span></button>
+        <h2>进入“{{ currentEvent.name }}”</h2><label>管理密码<input v-model="unlockPassword" type="password"
+            autocomplete="current-password" autofocus placeholder="请输入管理密码" /></label>
+        <footer><button type="button" class="secondary" @click="showUnlockDialog = false">取消</button><button
+            class="primary" type="submit">进入</button></footer>
+      </form>
+    </div>
 
-    <div v-if="selectedRecord" class="modal-backdrop" @click.self="selectedRecordId = ''"><section class="modal-card record-detail"><button class="modal-close" @click="selectedRecordId = ''"><span aria-hidden="true">×</span></button><h2>{{ selectedRecord.name }} 的礼金详情</h2><h3>当前记录信息</h3><div class="detail-row"><div><b>姓名：</b><span>{{ selectedRecord.name }}</span></div><button @click="startEdit('name')">纠错</button></div><div class="detail-row"><div><b>金额：</b><strong>{{ formatMoney(selectedRecord.amount) }}</strong><small>类型：{{ selectedRecord.method }}</small></div><button @click="startEdit('amount')">修改</button></div><div class="detail-row"><div><b>备注：</b><p>{{ remarkText(selectedRecord) || '（无备注）' }}</p></div><button @click="startEdit('remarks')">修改</button></div><div class="detail-time">录入时间：{{ formatDateTime(selectedRecord.createdAt) }}<br v-if="selectedRecord.updatedAt !== selectedRecord.createdAt" /> <span v-if="selectedRecord.updatedAt !== selectedRecord.createdAt">最后修改：{{ formatDateTime(selectedRecord.updatedAt) }}</span></div><details v-if="selectedRecord.history?.length" class="history"><summary>查看修改记录（{{ selectedRecord.history.length }}）</summary><ol><li v-for="(item,index) in selectedRecord.history" :key="index"><time>{{ formatDateTime(item.at) }}</time><span>{{ item.text }}</span></li></ol></details><footer><button class="danger-outline" :disabled="selectedRecord.abolished" @click="requestAbolish"><i class="ri-delete-bin-6-line"></i>{{ selectedRecord.abolished ? '此记录已作废' : '作废此记录' }}</button><button class="secondary" @click="selectedRecordId = ''">关闭</button></footer></section></div>
+    <div v-if="showLanShare && lanSession" class="modal-backdrop" @click.self="showLanShare = false">
+      <section class="modal-card lan-share-card"><button class="modal-close" type="button" aria-label="关闭二维码"
+          @click="showLanShare = false"><span aria-hidden="true">×</span></button>
+        <h2>局域网副屏</h2>
+        <p class="lan-share-status"><span></span>正在共享“{{ currentEvent.name }}”的只读数据</p>
+        <div class="lan-share-grid">
+          <div class="lan-qr"><img v-if="lanQrCode" :src="lanQrCode" alt="手机副屏二维码" /><i v-else
+              class="ri-loader-4-line spin"></i></div>
+          <div class="lan-share-info">
+            <h3>手机扫码即可查看</h3>
+            <ol>
+              <li>手机和平板连接同一个 Wi-Fi 或热点</li>
+              <li>使用微信或系统相机扫描二维码</li>
+              <li>在浏览器中打开，录入后会自动同步</li>
+              <li>若 Windows 首次弹出防火墙提示，请选择“允许访问”</li>
+            </ol><label>访问地址<div class="lan-url"><code>{{ lanSession.url }}</code><button type="button"
+                  @click="copyLanUrl">复制</button></div></label>
+            <p class="lan-warning"><i class="ri-shield-check-line"></i>副屏只能查看，不能修改礼金；停止共享后此链接立即失效。</p>
+          </div>
+        </div>
+        <footer><button class="danger-outline" type="button" :disabled="lanBusy"
+            @click="stopLanShare">停止共享</button><button class="secondary" type="button"
+            @click="showLanShare = false">暂时关闭二维码</button></footer>
+      </section>
+    </div>
 
-    <div v-if="editing" class="modal-backdrop modal-nested" @click.self="editing = null"><form class="modal-card edit-card" @submit.prevent="saveEdit"><button class="modal-close" type="button" @click="editing = null"><i class="ri-close-line"></i></button><h2>{{ editMode === 'name' ? '纠错姓名' : editMode === 'amount' ? '修改金额与类型' : '修改备注信息' }}</h2><template v-if="editMode === 'name'"><label>姓名<input v-model="editing.name" required /></label><p class="form-tip">姓名纠错将写入修改记录，方便日后核对。</p></template><template v-else-if="editMode === 'amount'"><label>金额<input v-model="editing.amount" type="number" min="0.01" step="0.01" required /></label><label>收款类型<select v-model="editing.method"><option v-for="method in PAYMENT_METHODS" :key="method">{{ method }}</option></select></label></template><template v-else><label>备注<textarea v-model="editing.remarks.custom"></textarea></label><label>礼品<input v-model="editing.remarks.gift" /></label><label>关系<input v-model="editing.remarks.relation" /></label><label>电话<input v-model="editing.remarks.phone" /></label><label>住址<input v-model="editing.remarks.address" /></label></template><footer><button type="button" class="secondary" @click="editing = null">取消</button><button class="primary">保存修改</button></footer></form></div>
+    <div v-if="selectedRecord" class="modal-backdrop" @click.self="selectedRecordId = ''">
+      <section class="modal-card record-detail"><button class="modal-close" @click="selectedRecordId = ''"><span
+            aria-hidden="true">×</span></button>
+        <h2>{{ selectedRecord.name }} 的礼金详情</h2>
+        <h3>当前记录信息</h3>
+        <div class="detail-row">
+          <div><b>姓名：</b><span>{{ selectedRecord.name }}</span></div><button @click="startEdit('name')">纠错</button>
+        </div>
+        <div class="detail-row">
+          <div><b>金额：</b><strong>{{ formatMoney(selectedRecord.amount) }}</strong><small>类型：{{ selectedRecord.method
+              }}</small></div><button @click="startEdit('amount')">修改</button>
+        </div>
+        <div class="detail-row">
+          <div><b>备注：</b>
+            <p>{{ remarkText(selectedRecord) || '（无备注）' }}</p>
+          </div><button @click="startEdit('remarks')">修改</button>
+        </div>
+        <div class="detail-time">录入时间：{{ formatDateTime(selectedRecord.createdAt) }}<br
+            v-if="selectedRecord.updatedAt !== selectedRecord.createdAt" /> <span
+            v-if="selectedRecord.updatedAt !== selectedRecord.createdAt">最后修改：{{
+              formatDateTime(selectedRecord.updatedAt) }}</span></div>
+        <details v-if="selectedRecord.history?.length" class="history">
+          <summary>查看修改记录（{{ selectedRecord.history.length }}）</summary>
+          <ol>
+            <li v-for="(item, index) in selectedRecord.history" :key="index"><time>{{ formatDateTime(item.at)
+                }}</time><span>{{ item.text }}</span></li>
+          </ol>
+        </details>
+        <footer><button class="danger-outline" :disabled="selectedRecord.abolished" @click="requestAbolish"><i
+              class="ri-delete-bin-6-line"></i>{{ selectedRecord.abolished ? '此记录已作废' : '作废此记录' }}</button><button
+            class="secondary" @click="selectedRecordId = ''">关闭</button></footer>
+      </section>
+    </div>
 
-    <div v-if="showAbolish" class="modal-backdrop modal-nested" @click.self="showAbolish = false"><section class="modal-card small-modal"><h2>作废礼金记录</h2><p>作废后记录会保留，但不计入统计和 PDF 正文。</p><textarea v-model="abolishReason" rows="4" placeholder="请输入作废原因，例如：重复录入"></textarea><footer><button class="secondary" @click="showAbolish = false">取消</button><button class="danger-button" @click="confirmAbolish">确认作废</button></footer></section></div>
+    <div v-if="editing" class="modal-backdrop modal-nested" @click.self="editing = null">
+      <form class="modal-card edit-card" @submit.prevent="saveEdit"><button class="modal-close" type="button"
+          @click="editing = null"><i class="ri-close-line"></i></button>
+        <h2>{{ editMode === 'name' ? '纠错姓名' : editMode === 'amount' ? '修改金额与类型' : '修改备注信息' }}</h2><template
+          v-if="editMode === 'name'"><label>姓名<input v-model="editing.name" required /></label>
+          <p class="form-tip">姓名纠错将写入修改记录，方便日后核对。</p>
+        </template><template v-else-if="editMode === 'amount'"><label>金额<input v-model="editing.amount" type="number"
+              min="0.01" step="0.01" required /></label><label>收款类型<select v-model="editing.method">
+              <option v-for="method in PAYMENT_METHODS" :key="method">{{ method }}</option>
+            </select></label></template><template v-else><label>备注<textarea
+              v-model="editing.remarks.custom"></textarea></label><label>礼品<input
+              v-model="editing.remarks.gift" /></label><label>关系<input
+              v-model="editing.remarks.relation" /></label><label>电话<input
+              v-model="editing.remarks.phone" /></label><label>住址<input
+              v-model="editing.remarks.address" /></label></template>
+        <footer><button type="button" class="secondary" @click="editing = null">取消</button><button
+            class="primary">保存修改</button>
+        </footer>
+      </form>
+    </div>
 
-    <div v-if="showStats" class="modal-backdrop" @click.self="showStats = false"><section class="modal-card stats-card"><button class="modal-close" @click="showStats = false"><i class="ri-close-line"></i></button><h2>礼金统计</h2><div class="stat-grid"><article><span>有效记录</span><b>{{ activeRecords.length }}</b><small>人</small></article><article><span>礼金总额</span><b>{{ formatMoney(total) }}</b></article><article><span>平均礼金</span><b>{{ formatMoney(total / Math.max(1,activeRecords.length)) }}</b></article><article v-for="(data,method) in methodStats" :key="method"><span>{{ method }}</span><b>{{ formatMoney(data.amount) }}</b><small>{{ data.count }} 人</small></article></div><footer><button class="secondary" @click="showStats = false">关闭</button></footer></section></div>
+    <div v-if="showAbolish" class="modal-backdrop modal-nested" @click.self="showAbolish = false">
+      <section class="modal-card small-modal">
+        <h2>作废礼金记录</h2>
+        <p>作废后记录会保留，但不计入统计和 PDF 正文。</p><textarea v-model="abolishReason" rows="4"
+          placeholder="请输入作废原因，例如：重复录入"></textarea>
+        <footer><button class="secondary" @click="showAbolish = false">取消</button><button class="danger-button"
+            @click="confirmAbolish">确认作废</button></footer>
+      </section>
+    </div>
 
-    <div v-if="showBackup" class="modal-backdrop" @click.self="showBackup = false"><section class="modal-card backup-card"><button class="modal-close" @click="showBackup = false"><i class="ri-close-line"></i></button><h2>备份/恢复数据</h2><p>数据备份包含所有事项、礼金记录和修改历史。建议活动结束后同时保留 JSON、Excel 和 PDF。</p><div class="backup-actions"><button class="primary" @click="exportBackup"><i class="ri-download-cloud-2-line"></i><span>导出完整数据备份<small>生成可跨设备恢复的 JSON 文件</small></span></button><button class="secondary" @click="restoreInput.click()"><i class="ri-upload-cloud-2-line"></i><span>从备份文件恢复<small>相同事项将以备份内容覆盖</small></span></button><input ref="restoreInput" hidden type="file" accept="application/json,.json" @change="restoreBackup" /></div></section></div>
+    <div v-if="showStats" class="modal-backdrop" @click.self="showStats = false">
+      <section class="modal-card stats-card"><button class="modal-close" @click="showStats = false"><i
+            class="ri-close-line"></i></button>
+        <h2>礼金统计</h2>
+        <div class="stat-grid">
+          <article><span>有效记录</span><b>{{ activeRecords.length }}</b><small>人</small></article>
+          <article><span>礼金总额</span><b>{{ formatMoney(total) }}</b></article>
+          <article><span>平均礼金</span><b>{{ formatMoney(total / Math.max(1, activeRecords.length)) }}</b></article>
+          <article v-for="(data, method) in methodStats" :key="method"><span>{{ method }}</span><b>{{
+            formatMoney(data.amount) }}</b><small>{{ data.count }} 人</small></article>
+        </div>
+        <footer><button class="secondary" @click="showStats = false">关闭</button></footer>
+      </section>
+    </div>
 
-    <div v-if="showSettings" class="modal-backdrop" @click.self="showSettings = false"><form class="modal-card settings-card" @submit.prevent="saveSettings"><button class="modal-close" type="button" @click="showSettings = false"><i class="ri-close-line"></i></button><h2>设置事项</h2><div class="settings-grid"><label>事项名称<input v-model="settingsForm.name" required /></label><label>记账人<input v-model="settingsForm.recorder" /></label><label>开始时间<input v-model="settingsForm.start" type="datetime-local" required /></label><label>结束时间<input v-model="settingsForm.end" type="datetime-local" required /></label><label>语音播报起报金额<input v-model="settingsForm.minSpeechAmount" type="number" min="0" /></label><label class="privacy-setting"><input v-model="settingsForm.hidePrivacy" type="checkbox" /><span>副屏信息脱敏显示<small>仅最新一条记录显示完整姓名</small></span></label></div><footer><button type="button" class="secondary" @click="showSettings = false">取消</button><button class="primary">保存设置</button></footer></form></div>
+    <div v-if="showBackup" class="modal-backdrop" @click.self="showBackup = false">
+      <section class="modal-card backup-card"><button class="modal-close" @click="showBackup = false"><i
+            class="ri-close-line"></i></button>
+        <h2>备份/恢复数据</h2>
+        <p>数据备份包含所有事项、礼金记录和修改历史。建议活动结束后同时保留 JSON、Excel 和 PDF。</p>
+        <div class="backup-actions"><button class="primary" @click="exportBackup"><i
+              class="ri-download-cloud-2-line"></i><span>导出完整数据备份<small>生成可跨设备恢复的 JSON 文件</small></span></button><button
+            class="secondary" @click="restoreInput.click()"><i
+              class="ri-upload-cloud-2-line"></i><span>从备份文件恢复<small>相同事项将以备份内容覆盖</small></span></button><input
+            ref="restoreInput" hidden type="file" accept="application/json,.json" @change="restoreBackup" /></div>
+      </section>
+    </div>
 
-    <div v-if="showDelete" class="modal-backdrop" @click.self="showDelete = false"><section class="modal-card delete-card"><button class="modal-close" @click="showDelete = false"><i class="ri-close-line"></i></button><h2>删除事项</h2><div class="warning-box"><i class="ri-error-warning-line"></i><p>此操作将永久删除“<b>{{ currentEvent.name }}</b>”及全部礼金记录，无法恢复。</p></div><template v-if="currentEvent.records.length"><p>为确保数据安全，请先导出完整备份：</p><button class="secondary wide" @click="exportBackup"><i class="ri-download-2-line"></i>{{ backupExported ? '备份已导出，可继续删除' : '导出数据备份' }}</button></template><label>输入管理密码确认<input v-model="deletePassword" type="password" @keydown.enter="deleteEvent" /></label><footer><button class="secondary" @click="showDelete = false">取消</button><button class="danger-button" :disabled="!backupExported" @click="deleteEvent">永久删除</button></footer></section></div>
+    <div v-if="showSettings" class="modal-backdrop" @click.self="showSettings = false">
+      <form class="modal-card settings-card" @submit.prevent="saveSettings"><button class="modal-close" type="button"
+          @click="showSettings = false"><i class="ri-close-line"></i></button>
+        <h2>设置事项</h2>
+        <div class="settings-grid"><label>事项名称<input v-model="settingsForm.name" required /></label><label>记账人<input
+              v-model="settingsForm.recorder" /></label><label>开始时间<input v-model="settingsForm.start"
+              type="datetime-local" required /></label><label>结束时间<input v-model="settingsForm.end"
+              type="datetime-local" required /></label><label>语音播报起报金额<input v-model="settingsForm.minSpeechAmount"
+              type="number" min="0" /></label><label class="privacy-setting"><input v-model="settingsForm.hidePrivacy"
+              type="checkbox" /><span>副屏信息脱敏显示<small>仅最新一条记录显示完整姓名</small></span></label></div>
+        <footer><button type="button" class="secondary" @click="showSettings = false">取消</button><button
+            class="primary">保存设置</button></footer>
+      </form>
+    </div>
+
+    <div v-if="showDelete" class="modal-backdrop" @click.self="showDelete = false">
+      <section class="modal-card delete-card"><button class="modal-close" @click="showDelete = false"><i
+            class="ri-close-line"></i></button>
+        <h2>删除事项</h2>
+        <div class="warning-box"><i class="ri-error-warning-line"></i>
+          <p>此操作将永久删除“<b>{{ currentEvent.name }}</b>”及全部礼金记录，无法恢复。</p>
+        </div><template v-if="currentEvent.records.length">
+          <p>为确保数据安全，请先导出完整备份：</p><button class="secondary wide" @click="exportBackup"><i
+              class="ri-download-2-line"></i>{{ backupExported ? '备份已导出，可继续删除' : '导出数据备份' }}</button>
+        </template><label>输入管理密码确认<input v-model="deletePassword" type="password"
+            @keydown.enter="deleteEvent" /></label>
+        <footer><button class="secondary" @click="showDelete = false">取消</button><button class="danger-button"
+            :disabled="!backupExported" @click="deleteEvent">永久删除</button></footer>
+      </section>
+    </div>
   </main>
 </template>

@@ -1,6 +1,7 @@
 const path = require("node:path");
 
 const RESPONSIVE_FILE = path.normalize(path.join("src", "responsive.css"));
+const TYPOGRAPHY_PROPS = new Set(["font", "font-size", "line-height", "letter-spacing", "word-spacing"]);
 
 function toCqw(value, designWidth) {
   return value.replace(/(-?(?:\d+|\d*\.\d+))px/g, (source, raw) => {
@@ -18,6 +19,7 @@ module.exports = {
       Declaration(declaration) {
         const file = path.normalize(declaration.source?.input?.file || "");
         if (!file.endsWith(RESPONSIVE_FILE)) return;
+        if (TYPOGRAPHY_PROPS.has(declaration.prop)) return;
 
         const selector = declaration.parent?.selector || "";
         const designWidth = selector.includes(".scaled-portrait")

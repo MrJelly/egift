@@ -19,14 +19,14 @@ const viewportSize = reactive({
 const isLandscapeLayout = computed(() => viewportSize.width >= viewportSize.height);
 
 const guestStageStyle = computed(() => {
-  const safeGap = 0;
-  const availableWidth = Math.max(1, viewportSize.width - safeGap * 2);
-  const availableHeight = Math.max(1, viewportSize.height - safeGap * 2);
-  const designWidth = 1280;
+  const availableWidth = Math.max(1, viewportSize.width);
+  const availableHeight = Math.max(1, viewportSize.height);
+  const designWidth = isLandscapeLayout.value ? 1080 : 420;
   const scale = Math.max(0.1, availableWidth / designWidth);
+  const designHeight = availableHeight / scale;
   return {
     "--guest-layout-width": `${designWidth}px`,
-    "--guest-layout-height": isLandscapeLayout.value ? `${(availableHeight / scale).toFixed(2)}px` : "auto",
+    "--guest-layout-height": `${designHeight.toFixed(2)}px`,
     "--guest-layout-scale": scale.toFixed(4),
   };
 });
