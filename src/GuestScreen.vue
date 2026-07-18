@@ -9,18 +9,25 @@ const PAGE_SIZE = 12;
 const events = ref(readEvents());
 const eventId = ref(new URLSearchParams(window.location.search).get("event") || localStorage.getItem(GUEST_EVENT_KEY) || "");
 const page = ref(1);
+const showPaymentQr = ref(false);
 let channel;
 
 const viewportSize = reactive({
   width: window.innerWidth,
   height: window.innerHeight,
 });
+const isIPadLikeViewport = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+const hasMobileSafeAreaFallback =
+  /Android|iPhone|iPad|iPod|HarmonyOS|OpenHarmony|Mobile/i.test(navigator.userAgent) || isIPadLikeViewport;
+const safeAreaFallbackTop = hasMobileSafeAreaFallback ? 30 : 0;
+const safeAreaFallbackBottom = hasMobileSafeAreaFallback ? 18 : 0;
+const safeAreaFallbackX = hasMobileSafeAreaFallback ? 8 : 0;
 
 const isLandscapeLayout = computed(() => viewportSize.width >= viewportSize.height);
 
 const guestStageStyle = computed(() => {
-  const availableWidth = Math.max(1, viewportSize.width);
-  const availableHeight = Math.max(1, viewportSize.height);
+  const availableWidth = Math.max(1, viewportSize.width - safeAreaFallbackX * 2);
+  const availableHeight = Math.max(1, viewportSize.height - safeAreaFallbackTop - safeAreaFallbackBottom);
   const designWidth = isLandscapeLayout.value ? 1080 : 420;
   const scale = Math.max(0.1, availableWidth / designWidth);
   const designHeight = availableHeight / scale;
@@ -32,6 +39,11 @@ const guestStageStyle = computed(() => {
 });
 
 const currentEvent = computed(() => events.value.find((event) => event.id === eventId.value));
+const currentPaymentQrCodes = computed(() => {
+  const value = currentEvent.value?.paymentQrCodes || currentEvent.value?.paymentQrCode;
+  const list = Array.isArray(value) ? value : value ? [value] : [];
+  return list.filter(Boolean).slice(0, 2);
+});
 const records = computed(() =>
   [...(currentEvent.value?.records || [])]
     .filter((record) => !record.abolished)
@@ -74,8 +86,9 @@ function onStorage(event) {
 }
 
 function updateViewportSize() {
-  viewportSize.width = window.innerWidth;
-  viewportSize.height = window.innerHeight;
+  const viewport = window.visualViewport;
+  viewportSize.width = Math.round(viewport?.width || window.innerWidth);
+  viewportSize.height = Math.round(viewport?.height || window.innerHeight);
 }
 
 onMounted(() => {
@@ -83,6 +96,8 @@ onMounted(() => {
   updateViewportSize();
   window.addEventListener("resize", updateViewportSize, { passive: true });
   window.addEventListener("orientationchange", updateViewportSize, { passive: true });
+  window.visualViewport?.addEventListener("resize", updateViewportSize, { passive: true });
+  window.visualViewport?.addEventListener("scroll", updateViewportSize, { passive: true });
   if ("BroadcastChannel" in window) {
     channel = new BroadcastChannel("gift-book-sync");
     channel.onmessage = ({ data }) => sync(data);
@@ -94,6 +109,8 @@ onBeforeUnmount(() => {
   window.removeEventListener("storage", onStorage);
   window.removeEventListener("resize", updateViewportSize);
   window.removeEventListener("orientationchange", updateViewportSize);
+  window.visualViewport?.removeEventListener("resize", updateViewportSize);
+  window.visualViewport?.removeEventListener("scroll", updateViewportSize);
   channel?.close();
 });
 </script>
@@ -109,7 +126,21 @@ onBeforeUnmount(() => {
     <div v-else class="guest-container">
       <header class="guest-header">
         <div><small>电子礼簿 · 副屏</small><h1>{{ currentEvent.name }}</h1></div>
-        <div class="guest-totals"><span>本页小计 <b>{{ formatMoney(pageTotal) }}</b></span><span>总金额 <b>{{ formatMoney(total) }}</b></span><span>总人数 <b>{{ records.length }}</b></span></div>
+        <div class="guest-totals"><span>本页小计 <b>{{ formatMoney(pageTotal) }}</b></span><span>总金额 <b>{{ formatMoney(total) }}</b></span><span>总人数 <b>{{ records.length }}</b></span>
+          <div class="guest-payment-wrap">
+            <button class="guest-payment-trigger" type="button" :aria-expanded="showPaymentQr" @click="showPaymentQr = !showPaymentQr">
+              <i class="ri-qr-code-line"></i><span>收款码</span><small v-if="currentPaymentQrCodes.length">{{ currentPaymentQrCodes.length }}</small>
+            </button>
+            <section v-if="showPaymentQr" class="guest-qr-popover" :class="{ empty: !currentPaymentQrCodes.length }">
+              <button class="guest-qr-close" type="button" aria-label="关闭收款码" @click="showPaymentQr = false">×</button>
+              <div v-if="currentPaymentQrCodes.length" class="guest-qr-images">
+                <img v-for="(code, index) in currentPaymentQrCodes" :key="`${index}-${code.length}`" :src="code"
+                  :alt="`收款码 ${index + 1}`" />
+              </div>
+              <p v-else>暂无收款码</p>
+            </section>
+          </div>
+        </div>
       </header>
 
       <section class="guest-book">

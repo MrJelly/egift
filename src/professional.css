@@ -1146,6 +1146,87 @@ button:disabled {
     font-size: 11px
 }
 
+.payment-qr-setting {
+    display: grid;
+    grid-column: 1 / -1;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f9fafb;
+    font-size: 13px;
+    font-weight: 700
+}
+
+.payment-qr-preview-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 150px));
+    gap: 12px
+}
+
+.payment-qr-preview-list figure {
+    display: grid;
+    gap: 8px;
+    margin: 0
+}
+
+.payment-qr-preview-list img {
+    width: 150px;
+    max-width: 100%;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: #fff
+}
+
+.payment-qr-preview-list figcaption {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    color: #66717d;
+    font-size: 12px;
+    font-weight: 600
+}
+
+.payment-qr-preview-list figcaption button {
+    min-width: 64px;
+    padding: 5px 9px
+}
+
+.payment-qr-add {
+    display: grid;
+    place-items: center;
+    align-content: center;
+    gap: 5px;
+    width: 150px;
+    max-width: 100%;
+    min-height: 150px;
+    padding: 14px;
+    border: 1px dashed color-mix(in srgb, var(--accent) 55%, #d8dde3);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--accent) 4%, #fff);
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.payment-qr-add:hover {
+    border-style: solid;
+    background: color-mix(in srgb, var(--accent) 8%, #fff)
+}
+
+.payment-qr-add i {
+    font-size: 28px
+}
+
+.payment-qr-add small {
+    font-size: 11px
+}
+
+.payment-qr-setting small {
+    color: #7d8691;
+    font-weight: 400
+}
+
 .warning-box {
     display: flex;
     align-items: flex-start;

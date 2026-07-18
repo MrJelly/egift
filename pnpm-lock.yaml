@@ -30,9 +30,6 @@ importers:
       '@vitejs/plugin-vue':
         specifier: 5.2.4
         version: 5.2.4(vite@5.4.21)(vue@3.5.35)
-      postcss:
-        specifier: 8.5.15
-        version: 8.5.15
       vite:
         specifier: 5.4.21
         version: 5.4.21

@@ -56,6 +56,7 @@ const editing = ref(null);
 const editMode = ref("");
 const remarkFields = ref([]);
 const restoreInput = ref(null);
+const paymentQrInput = ref(null);
 const backupExported = ref(false);
 const deletePassword = ref("");
 const abolishReason = ref("");
@@ -90,16 +91,23 @@ const settingsForm = reactive({
   recorder: "",
   minSpeechAmount: 0,
   hidePrivacy: false,
+  paymentQrCodes: [],
 });
 const viewportSize = reactive({
   width: window.innerWidth,
   height: window.innerHeight,
 });
+const isIPadLikeViewport = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+const hasMobileSafeAreaFallback =
+  /Android|iPhone|iPad|iPod|HarmonyOS|OpenHarmony|Mobile/i.test(navigator.userAgent) || isIPadLikeViewport;
+const safeAreaFallbackTop = hasMobileSafeAreaFallback ? 30 : 0;
+const safeAreaFallbackBottom = hasMobileSafeAreaFallback ? 18 : 0;
 
 const currentEvent = computed(() => events.value.find((event) => event.id === activeId.value));
 const selectedEventLabel = computed(() => currentEvent.value?.name || "请选择一个事项");
 const selectedThemeLabel = computed(() => THEME_OPTIONS.find((theme) => theme.value === createForm.theme)?.label || THEME_OPTIONS[0].label);
 const isLandscapeLayout = computed(() => viewportSize.width >= viewportSize.height);
+const toolsCollapsible = computed(() => !isLandscapeLayout.value || viewportSize.width <= 1250);
 const mainStageStyle = computed(() => {
   if (!isLandscapeLayout.value) {
     return {
@@ -111,7 +119,7 @@ const mainStageStyle = computed(() => {
 
   const stagePadding = Math.min(28, Math.max(10, viewportSize.width * 0.02));
   const availableWidth = Math.max(1, viewportSize.width - stagePadding * 2);
-  const availableHeight = Math.max(1, viewportSize.height - stagePadding * 2);
+  const availableHeight = Math.max(1, viewportSize.height - safeAreaFallbackTop - safeAreaFallbackBottom - stagePadding * 2);
   const scale = Math.max(0.1, availableHeight / 700);
   const designWidth = availableWidth / scale;
   return {
@@ -130,7 +138,7 @@ const setupStageStyle = computed(() => {
   }
 
   const availableWidth = Math.max(1, viewportSize.width);
-  const availableHeight = Math.max(1, viewportSize.height);
+  const availableHeight = Math.max(1, viewportSize.height - safeAreaFallbackTop - safeAreaFallbackBottom);
   const scale = Math.max(0.1, availableHeight / 650);
   const designWidth = availableWidth / scale;
   return {
@@ -207,6 +215,8 @@ onMounted(() => {
   updateViewportSize();
   window.addEventListener("resize", updateViewportSize, { passive: true });
   window.addEventListener("orientationchange", updateViewportSize, { passive: true });
+  window.visualViewport?.addEventListener("resize", updateViewportSize, { passive: true });
+  window.visualViewport?.addEventListener("scroll", updateViewportSize, { passive: true });
   restoreLanSession();
 });
 
@@ -216,11 +226,14 @@ onBeforeUnmount(() => {
   clearTimeout(lanSyncTimer);
   window.removeEventListener("resize", updateViewportSize);
   window.removeEventListener("orientationchange", updateViewportSize);
+  window.visualViewport?.removeEventListener("resize", updateViewportSize);
+  window.visualViewport?.removeEventListener("scroll", updateViewportSize);
 });
 
 function updateViewportSize() {
-  viewportSize.width = window.innerWidth;
-  viewportSize.height = window.innerHeight;
+  const viewport = window.visualViewport;
+  viewportSize.width = Math.round(viewport?.width || window.innerWidth);
+  viewportSize.height = Math.round(viewport?.height || window.innerHeight);
 }
 
 function normalizeEvent(event) {
@@ -234,6 +247,7 @@ function normalizeEvent(event) {
     recorder: event.recorder || "",
     minSpeechAmount: Number(event.minSpeechAmount || 0),
     hidePrivacy: Boolean(event.hidePrivacy),
+    paymentQrCodes: normalizePaymentQrCodes(event.paymentQrCodes || event.paymentQrCode),
     records: (event.records || []).map((record) => ({
       ...record,
       id: record.id || crypto.randomUUID(),
@@ -246,6 +260,11 @@ function normalizeEvent(event) {
       abolished: Boolean(record.abolished),
     })),
   };
+}
+
+function normalizePaymentQrCodes(value) {
+  const list = Array.isArray(value) ? value : value ? [value] : [];
+  return list.filter(Boolean).slice(0, 2);
 }
 
 function loadEvents() {
@@ -606,6 +625,7 @@ function openSettings() {
     recorder: currentEvent.value.recorder || "",
     minSpeechAmount: Number(currentEvent.value.minSpeechAmount || 0),
     hidePrivacy: Boolean(currentEvent.value.hidePrivacy),
+    paymentQrCodes: normalizePaymentQrCodes(currentEvent.value.paymentQrCodes || currentEvent.value.paymentQrCode),
   });
   showSettings.value = true;
   showEventMenu.value = false;
@@ -621,9 +641,49 @@ function saveSettings() {
     recorder: settingsForm.recorder.trim(),
     minSpeechAmount: Number(settingsForm.minSpeechAmount || 0),
     hidePrivacy: settingsForm.hidePrivacy,
+    paymentQrCodes: normalizePaymentQrCodes(settingsForm.paymentQrCodes),
   });
   showSettings.value = false;
   notify("事项设置已保存");
+}
+
+async function readPaymentQrFiles(event, limit = 2) {
+  const files = Array.from(event.target.files || []).slice(0, Math.max(0, limit));
+  event.target.value = "";
+  if (!files.length) return [];
+  if (files.some((file) => !file.type.startsWith("image/"))) {
+    notify("请选择图片格式的收款码", "error");
+    return [];
+  }
+  if (files.some((file) => file.size > 3 * 1024 * 1024)) {
+    notify("单张收款码图片不能超过 3MB", "error");
+    return [];
+  }
+  return Promise.all(
+    files.map(
+      (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result || ""));
+          reader.onerror = () => reject(reader.error || new Error("读取图片失败"));
+          reader.readAsDataURL(file);
+        }),
+    ),
+  ).catch((error) => {
+    notify(error.message || "读取收款码失败", "error");
+    return [];
+  });
+}
+
+async function uploadPaymentQrCode(event) {
+  const existingCodes = normalizePaymentQrCodes(settingsForm.paymentQrCodes);
+  const codes = await readPaymentQrFiles(event, 2 - existingCodes.length);
+  settingsForm.paymentQrCodes = normalizePaymentQrCodes([...existingCodes, ...codes]);
+  if (codes.length) notify(`已添加 ${codes.length} 张收款码，保存设置后同步到副屏`);
+}
+
+function removePaymentQrCode(index) {
+  settingsForm.paymentQrCodes.splice(index, 1);
 }
 
 function syncGuestScreen() {
@@ -650,6 +710,7 @@ function buildLanSnapshot() {
       name: currentEvent.value.name,
       theme: currentEvent.value.theme,
       hidePrivacy: Boolean(currentEvent.value.hidePrivacy),
+      paymentQrCodes: normalizePaymentQrCodes(currentEvent.value.paymentQrCodes || currentEvent.value.paymentQrCode),
       records: (currentEvent.value.records || []).map((record) => ({
         id: record.id,
         name: record.name,
@@ -1045,10 +1106,10 @@ async function generatePdf() {
               <button class="primary entry-submit">确认录入</button>
             </form>
 
-            <button v-if="!mobileToolsOpen" class="tools-toggle tools-toggle-open" type="button"
+            <button v-if="toolsCollapsible && !mobileToolsOpen" class="tools-toggle tools-toggle-open" type="button"
               :aria-expanded="mobileToolsOpen" aria-label="展开功能区" @click="mobileToolsOpen = true"><span>展开</span><i
                 class="ri-arrow-down-s-line"></i></button>
-            <div class="tools" :class="{ open: mobileToolsOpen }">
+            <div class="tools" :class="{ open: mobileToolsOpen, collapsible: toolsCollapsible }">
               <h3>功能区</h3>
               <div class="search"><input v-model="query" placeholder="按姓名或备注查找…"
                   @keydown.enter.prevent="openSearchResults" /><button type="button" aria-label="搜索礼金记录"
@@ -1056,10 +1117,11 @@ async function generatePdf() {
                 @click="generatePdf"><i :class="pdfBusy ? 'ri-loader-4-line spin' : 'ri-printer-line'"></i>{{ pdfBusy ?
                   '正在生成 PDF…' :
                   '打印/另存为PDF' }}</button><button @click="exportExcel"><i class="ri-file-excel-2-line"></i>导出为
-                Excel</button><button @click="showStats = true"><i class="ri-pie-chart-line"></i>查看统计</button><label
+                Excel</button><button @click="showStats = true"><i
+                  class="ri-pie-chart-line"></i>查看统计</button><label
                 class="voice"><span class="voice-label"><i class="ri-volume-up-line"></i>语音播报</span><input
                   v-model="speech" type="checkbox" role="switch" :aria-checked="speech" /><span class="switch-track"
-                  aria-hidden="true"></span></label><button class="tools-toggle tools-toggle-close" type="button"
+                  aria-hidden="true"></span></label><button v-if="toolsCollapsible" class="tools-toggle tools-toggle-close" type="button"
                 aria-label="收起功能区" @click="mobileToolsOpen = false"><span>收起</span><i
                   class="ri-arrow-up-s-line"></i></button>
             </div>
@@ -1251,7 +1313,22 @@ async function generatePdf() {
               type="datetime-local" required /></label><label>结束时间<input v-model="settingsForm.end"
               type="datetime-local" required /></label><label>语音播报起报金额<input v-model="settingsForm.minSpeechAmount"
               type="number" min="0" /></label><label class="privacy-setting"><input v-model="settingsForm.hidePrivacy"
-              type="checkbox" /><span>副屏信息脱敏显示<small>仅最新一条记录显示完整姓名</small></span></label></div>
+              type="checkbox" /><span>副屏信息脱敏显示<small>仅最新一条记录显示完整姓名</small></span></label>
+          <div class="payment-qr-setting"><span>副屏收款码（最多 2 张）</span><input ref="paymentQrInput" hidden type="file"
+              accept="image/*" multiple @change="uploadPaymentQrCode" />
+            <div class="payment-qr-preview-list">
+              <figure v-for="(code, index) in settingsForm.paymentQrCodes" :key="`${index}-${code.length}`">
+                <img :src="code" :alt="`收款码预览 ${index + 1}`" />
+                <figcaption><span>第 {{ index + 1 }} 张</span><button type="button" class="danger-outline"
+                    @click="removePaymentQrCode(index)">删除</button></figcaption>
+              </figure>
+              <button v-if="settingsForm.paymentQrCodes.length < 2" type="button" class="payment-qr-add"
+                @click="paymentQrInput?.click()"><i class="ri-add-line"></i><span>{{ settingsForm.paymentQrCodes.length ?
+                  '继续上传' : '上传收款码' }}</span><small>还可上传 {{ 2 - settingsForm.paymentQrCodes.length }} 张</small></button>
+            </div>
+            <small>保存后，副屏“总人数”右侧会显示收款码按钮，点击即可查看。</small>
+          </div>
+        </div>
         <footer><button type="button" class="secondary" @click="showSettings = false">取消</button><button
             class="primary">保存设置</button></footer>
       </form>

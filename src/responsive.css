@@ -11,6 +11,18 @@ body,
   min-width: 0;
   min-height: 100%;
   margin: 0;
+  --app-safe-top: env(safe-area-inset-top, 0px);
+  --app-safe-right: env(safe-area-inset-right, 0px);
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --app-safe-left: env(safe-area-inset-left, 0px);
+}
+
+.safe-area-fallback,
+.platform-android {
+  --app-safe-top: max(env(safe-area-inset-top, 0px), 30px);
+  --app-safe-right: max(env(safe-area-inset-right, 0px), 8px);
+  --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), 18px);
+  --app-safe-left: max(env(safe-area-inset-left, 0px), 8px);
 }
 
 html,
@@ -35,7 +47,11 @@ textarea {
   width: 100%;
   height: 100dvh;
   min-height: 0;
-  padding: clamp(12px, 2.2vw, 30px);
+  padding:
+    calc(clamp(12px, 2.2vw, 30px) + var(--app-safe-top))
+    calc(clamp(12px, 2.2vw, 30px) + var(--app-safe-right))
+    calc(clamp(12px, 2.2vw, 30px) + var(--app-safe-bottom))
+    calc(clamp(12px, 2.2vw, 30px) + var(--app-safe-left));
   overflow: hidden;
 }
 
@@ -203,7 +219,11 @@ textarea {
 /* Main screen ----------------------------------------------------------- */
 .pro-app:has(.main-stage) {
   display: block;
-  padding: clamp(10px, 2vw, 28px);
+  padding:
+    calc(clamp(10px, 2vw, 28px) + var(--app-safe-top))
+    calc(clamp(10px, 2vw, 28px) + var(--app-safe-right))
+    calc(clamp(10px, 2vw, 28px) + var(--app-safe-bottom))
+    calc(clamp(10px, 2vw, 28px) + var(--app-safe-left));
 }
 
 .main-stage.scaled-layout {
@@ -398,7 +418,22 @@ textarea {
 }
 
 .tools-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  min-height: 34px;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.tools.collapsible:not(.open) {
   display: none;
+}
+
+.tools>.tools-toggle-close {
+  margin-top: 2px;
 }
 
 .unlock-card {
@@ -586,6 +621,7 @@ textarea {
     width: 100%;
     height: auto;
     min-height: 0;
+    padding: 0;
     overflow: visible;
     transform: none;
   }

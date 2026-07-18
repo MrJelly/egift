@@ -13,6 +13,7 @@
 - 数据备份：支持 JSON 备份与恢复。
 - 导出能力：支持打印/另存为 PDF，支持导出 Excel。
 - 副屏展示：本机副屏或局域网手机扫码查看，只读实时同步。
+- 双收款码：主屏可上传最多两张收款码，副屏在“总人数”右侧点击按钮即可就地查看。
 - 多端适配：桌面、平板横竖屏、手机副屏做了响应式适配。
 - Tauri 打包：支持 Windows EXE 和 Android APK。
 
@@ -47,6 +48,12 @@ http://127.0.0.1:5173/
 
 副屏是只读页面，只展示礼簿和统计信息，不允许修改数据。
 
+### 上传收款码
+
+在左上角事项菜单进入“设置此事项”即可管理收款码。每个事项最多保存两张图片，可追加第二张、预览或删除，删除后可重新上传。
+
+副屏会实时同步收款码。在副屏顶部“总人数”右侧点击“收款码”，图片会在按钮下方展开。
+
 ### 打印 / 另存为 PDF
 
 点击“打印/另存为 PDF”会生成适合打印的礼簿 PDF。桌面端可以直接保存，浏览器端会触发下载或打印流程。
@@ -55,87 +62,19 @@ http://127.0.0.1:5173/
 
 点击“导出为 Excel”会导出当前事项的礼金明细。
 
-## 构建前端
-
-```bash
-pnpm build
-```
-
-构建产物位于：
-
-```text
-dist/
-```
-
-## Tauri 桌面端和 Android
-
-项目已接入 Tauri 2，同一套 Vue 前端可以打包为 Windows 桌面应用和 Android 应用。
-
-### Windows EXE
-
-```bash
-pnpm tauri:build:win
-```
-
-输出目录通常为：
-
-```text
-src-tauri/target/release/bundle/nsis/
-```
-
-### Android APK
-
-首次初始化 Android 工程：
-
-```bash
-pnpm tauri:android:init
-```
-
-构建 APK：
-
-```bash
-pnpm tauri:build:apk
-```
-
-构建 ARM64 debug APK：
-
-```bash
-pnpm tauri:build:apk:debug
-```
-
-Android 产物通常位于：
-
-```text
-src-tauri/gen/android/app/build/outputs/
-```
-
-## GitHub 自动构建
+## 自动构建与发版
 
 仓库内包含两套自动构建流程：
 
 - `.github/workflows/main-release.yml`：推送到 `main` 后自动构建并创建预发布 Release。
 - `.github/workflows/build-tauri.yml`：推送 `v*` 版本标签后自动构建并创建正式 Release。
 
-两个 workflow 都支持在 GitHub Actions 页面手动点击 `Run workflow`。
-
-构建完成后，在对应 Actions 运行页面的 `Artifacts` 区域可以下载临时构建产物：
+代码推送到 `main` 后会自动构建 Windows 安装包和 Android APK，并更新固定预发布版本 `main-latest`。构建完成后，可在 GitHub Release 或对应 Actions 运行页面下载：
 
 - `egift-windows-x64-nsis`：Windows 安装包。
 - `egift-android-arm64-apk-debug`：Android ARM64 debug APK。
 
-同时 workflow 会自动创建 GitHub Release：
-
-- 推送到 `main`：自动更新固定预发布版本 `main-latest`，适合日常测试下载，不会堆积大量测试版本。
-- 推送 `v*` 标签：创建正式版本，例如 `v0.1.4`。
-
-正式发版示例：
-
-示例：
-
-```bash
-git tag v0.1.4
-git push origin v0.1.4
-```
+正式版本由 `v*` 标签触发自动构建并创建正式 Release。日常开发不需要在本地执行打包或部署命令。
 
 ## 数据说明
 
