@@ -14,9 +14,17 @@ body,
 }
 
 html,
-body,
+body {
+  height: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+}
+
 #app {
-  overflow: hidden;
+  height: auto;
+  overflow: visible;
 }
 
 * {
@@ -122,25 +130,36 @@ textarea {
    rotation. Vue applies these layout classes from the measured viewport, so
    the setup form always owns a real, independently scrollable right pane. */
 .pro-app.is-setup.layout-landscape {
-  height: var(--app-height, 100vh);
-  overflow: hidden;
+  height: auto;
+  min-height: var(--app-height, 100vh);
+  overflow: visible;
 }
 
 .pro-app.is-setup.layout-landscape .setup-stage,
 .pro-app.is-setup.layout-landscape .setup-screen {
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
+  height: auto;
+  min-height: calc(var(--app-height, 100vh) - 16px);
+  overflow: visible;
+}
+
+.pro-app.is-setup.layout-landscape .setup-screen {
+  align-items: start;
 }
 
 .pro-app.is-setup.layout-landscape .setup-card {
   position: relative;
-  height: 100%;
+  height: auto;
+  max-height: none;
   min-height: 0;
-  overflow-x: hidden;
-  overflow-y: scroll;
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
+  overflow: visible;
+}
+
+.pro-app.is-setup.layout-landscape .setup-brand {
+  position: sticky;
+  top: 0;
+  height: calc(var(--app-height, 100vh) - 16px);
+  min-height: 0;
+  align-self: start;
 }
 
 .setup-landscape .setup-title {
@@ -273,14 +292,16 @@ textarea {
    lose after entering an event. */
 .pro-app.is-main.layout-portrait {
   position: relative;
+  height: auto;
+  min-height: var(--app-height, 100vh);
+  max-height: none;
+  overflow: visible;
+}
+
+.pro-app.is-main.layout-landscape {
   height: var(--app-height, 100vh);
-  max-height: var(--app-height, 100vh);
-  overflow-x: hidden;
-  overflow-y: scroll;
-  overscroll-behavior-x: none;
-  overscroll-behavior-y: contain;
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .main-stage.scaled-layout {
@@ -694,12 +715,9 @@ textarea {
 
 @media (orientation: portrait) {
   .pro-app.is-main {
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-x: none;
-    overscroll-behavior-y: contain;
-    touch-action: pan-y;
-    -webkit-overflow-scrolling: touch;
+    height: auto;
+    min-height: var(--app-height, 100vh);
+    overflow: visible;
   }
 }
 

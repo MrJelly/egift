@@ -205,7 +205,6 @@ onMounted(() => {
   window.addEventListener("orientationchange", settleViewportAfterRotation, { passive: true });
   orientationQuery.addEventListener?.("change", settleViewportAfterRotation);
   window.visualViewport?.addEventListener("resize", updateViewportSize, { passive: true });
-  window.visualViewport?.addEventListener("scroll", updateViewportSize, { passive: true });
   restoreLanSession();
 });
 
@@ -218,7 +217,6 @@ onBeforeUnmount(() => {
   window.removeEventListener("orientationchange", settleViewportAfterRotation);
   orientationQuery.removeEventListener?.("change", settleViewportAfterRotation);
   window.visualViewport?.removeEventListener("resize", updateViewportSize);
-  window.visualViewport?.removeEventListener("scroll", updateViewportSize);
 });
 
 function updateViewportSize() {
