@@ -66,6 +66,7 @@ let toastTimer;
 let syncChannel;
 let lanSyncTimer;
 let layoutResizeObserver;
+let setupTouchScroll = null;
 
 const createForm = reactive({
   name: "",
@@ -238,6 +239,27 @@ function settleViewportAfterRotation() {
   updateViewportSize();
   window.setTimeout(updateViewportSize, 80);
   window.setTimeout(updateViewportSize, 280);
+}
+
+function beginSetupTouchScroll(event) {
+  const touch = event.touches?.[0];
+  if (!touch) return;
+  setupTouchScroll = {
+    y: touch.clientY,
+    scrollTop: event.currentTarget.scrollTop,
+  };
+}
+
+function moveSetupTouchScroll(event) {
+  const touch = event.touches?.[0];
+  if (!touch || !setupTouchScroll) return;
+  const panel = event.currentTarget;
+  const nextScrollTop = setupTouchScroll.scrollTop + setupTouchScroll.y - touch.clientY;
+  panel.scrollTop = Math.max(0, Math.min(nextScrollTop, panel.scrollHeight - panel.clientHeight));
+}
+
+function endSetupTouchScroll() {
+  setupTouchScroll = null;
 }
 
 function updateLayoutBoxes() {
@@ -999,7 +1021,7 @@ async function generatePdf() {
       giftBookStyles: {
         name: { fontSize: 20, color: solemn ? "#262626" : "#333333" },
         label: { fontSize: 20, color: themeColor },
-        amount: { fontSize: 18, color: solemn ? "#262626" : "#333333" },
+        amount: { fontSize: 20, color: solemn ? "#262626" : "#333333" },
         coverText: { fontSize: 28, color: solemn ? "#f3f4f6" : "#f5d4ab" },
         pageInfo: { fontSize: 12, themeColor, baseColor: solemn ? "#1f2937" : "#1f2937" },
       },
@@ -1048,7 +1070,8 @@ async function generatePdf() {
           <p>{{ activeTheme === 'theme-solemn' ? '慎终追远 · 礼敬故人' : '传统礼序 · 数字新章' }}</p>
         </div>
       </div>
-      <div class="setup-card">
+      <div class="setup-card" @touchstart="beginSetupTouchScroll" @touchmove.prevent="moveSetupTouchScroll"
+        @touchend="endSetupTouchScroll" @touchcancel="endSetupTouchScroll">
         <h1 class="setup-title">电子礼簿系统</h1>
         <section v-if="events.length" class="event-select">
           <h2>选择事项</h2>

@@ -234,7 +234,7 @@ class GiftRegistryPDF {
                     x: colX, y: line1Y, cellWidth: colWidth, cellHeight: giftTitleHeight,
                     initialFontSize: labelStyle.fontSize, minFontSize:8, color: labelStyle.color, isVertical: true
                 });
-                this._drawText(page, item.amountText, fonts.amountFont, {
+                this._drawText(page, item.amountText, fonts.mainFont, {
                     x: colX, y: margin.bottom + numericAmountHeight, cellWidth: colWidth, cellHeight: chineseAmountHeight,
                     initialFontSize: amountStyle.fontSize, minFontSize: 8, color: amountStyle.color, isVertical: true
                 });

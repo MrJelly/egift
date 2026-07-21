@@ -130,42 +130,45 @@ textarea {
    rotation. Vue applies these layout classes from the measured viewport, so
    the setup form always owns a real, independently scrollable right pane. */
 .pro-app.is-setup.layout-landscape {
-  height: auto;
-  min-height: var(--app-height, 100vh);
-  overflow: visible;
+  height: var(--app-height, 100vh);
+  min-height: 0;
+  overflow: hidden;
 }
 
 .pro-app.is-setup.layout-landscape .setup-stage,
 .pro-app.is-setup.layout-landscape .setup-screen {
-  height: auto;
-  min-height: calc(var(--app-height, 100vh) - 16px);
-  overflow: visible;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .pro-app.is-setup.layout-landscape .setup-screen {
-  align-items: start;
+  align-items: stretch;
   container-type: normal;
 }
 
 .pro-app.is-setup.layout-landscape .setup-card {
   position: relative;
-  height: auto;
-  max-height: none;
+  height: 100%;
+  max-height: 100%;
   min-height: 0;
-  overflow: visible;
+  overflow-x: hidden;
+  overflow-y: auto;
+  touch-action: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .pro-app.is-setup.layout-landscape .setup-brand {
-  position: fixed;
-  z-index: 1;
-  top: 8px;
-  left: 8px;
-  width: calc((100vw - 16px) * 0.34);
-  min-width: 260px;
-  height: calc(var(--app-height, 100vh) - 16px);
+  position: relative;
+  z-index: auto;
+  top: auto;
+  left: auto;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
   min-height: 0;
-  align-self: start;
-  border-radius: 16px 0 0 16px;
+  align-self: stretch;
+  border-radius: 0;
 }
 
 .setup-landscape .setup-title {
