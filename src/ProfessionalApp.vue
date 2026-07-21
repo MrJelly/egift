@@ -227,7 +227,12 @@ function updateViewportSize() {
   // reliable source for our full-screen canvas.
   viewportSize.width = Math.round(document.documentElement.clientWidth || window.innerWidth);
   viewportSize.height = Math.round(document.documentElement.clientHeight || window.innerHeight);
-  landscapeViewport.value = orientationQuery.matches;
+  // Use a concrete pixel height for older Android WebViews. Some Android 11
+  // devices keep 100dvh and orientation media queries at their pre-rotation
+  // values, which leaves the intended scroll container without a usable
+  // height. The layout viewport dimensions update reliably on those devices.
+  document.documentElement.style.setProperty("--app-height", `${viewportSize.height}px`);
+  landscapeViewport.value = viewportSize.width > viewportSize.height;
   requestAnimationFrame(updateLayoutBoxes);
 }
 
@@ -991,7 +996,7 @@ async function generatePdf() {
       mainFontUrl: "/assets/MaShanZheng-Regular.ttf",
       giftLabelFontUrl: "/assets/SourceHanSerifCN-Heavy.ttf",
       formalFontUrl: "/assets/NotoSansSCMedium-mini.ttf",
-      amountFontUrl: "/assets/NotoSansSCMedium-mini.ttf",
+      amountFontUrl: "/assets/MaShanZheng-Regular.ttf",
       coverFontUrl: "/assets/NotoSansSCMedium-mini.ttf",
       giftBookStyles: {
         name: { fontSize: 20, color: solemn ? "#262626" : "#333333" },
@@ -1026,7 +1031,8 @@ async function generatePdf() {
 </script>
 
 <template>
-  <main class="pro-app" :class="[activeTheme, unlocked ? 'is-main' : 'is-setup']">
+  <main class="pro-app"
+    :class="[activeTheme, unlocked ? 'is-main' : 'is-setup', isLandscapeLayout ? 'layout-landscape' : 'layout-portrait']">
     <transition name="toast">
       <div v-if="toast" class="toast-message" :class="toast.type"><i
           :class="toast.type === 'error' ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'"></i>{{ toast.message }}

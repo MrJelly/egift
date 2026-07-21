@@ -33,7 +33,9 @@ textarea {
 
 .pro-app {
   width: 100%;
+  height: 100vh;
   height: 100dvh;
+  height: var(--app-height, 100vh);
   min-height: 0;
   padding: 8px;
   overflow: hidden;
@@ -106,10 +108,39 @@ textarea {
 .setup-landscape .setup-card {
   justify-content: flex-start;
   max-width: none;
+  max-height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  padding: 24px 42px;
   padding: 24px clamp(30px, 4cqw, 54px);
+}
+
+/* Android 11 WebViews can fail to refresh orientation media queries after a
+   rotation. Vue applies these layout classes from the measured viewport, so
+   the setup form always owns a real, independently scrollable right pane. */
+.pro-app.is-setup.layout-landscape {
+  height: var(--app-height, 100vh);
+  overflow: hidden;
+}
+
+.pro-app.is-setup.layout-landscape .setup-stage,
+.pro-app.is-setup.layout-landscape .setup-screen {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pro-app.is-setup.layout-landscape .setup-card {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: scroll;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .setup-landscape .setup-title {
@@ -235,6 +266,21 @@ textarea {
 .pro-app.is-main {
   display: block;
   padding: 8px;
+}
+
+/* Keep the application itself as the portrait scroll owner. This avoids the
+   body/#app scroll hand-off that older Android System WebView versions can
+   lose after entering an event. */
+.pro-app.is-main.layout-portrait {
+  position: relative;
+  height: var(--app-height, 100vh);
+  max-height: var(--app-height, 100vh);
+  overflow-x: hidden;
+  overflow-y: scroll;
+  overscroll-behavior-x: none;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
 }
 
 .main-stage.scaled-layout {
