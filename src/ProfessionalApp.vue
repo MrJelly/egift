@@ -95,8 +95,8 @@ const settingsForm = reactive({
   paymentQrCodes: [],
 });
 const viewportSize = reactive({
-  width: window.innerWidth,
-  height: window.innerHeight,
+  width: document.documentElement.clientWidth || window.innerWidth,
+  height: document.documentElement.clientHeight || window.innerHeight,
 });
 const mainStageRef = ref(null);
 const setupStageRef = ref(null);
@@ -109,8 +109,8 @@ const hasMobileSafeAreaFallback =
 function fallbackSafeInsets() {
   if (!hasMobileSafeAreaFallback) return { top: 0, right: 0, bottom: 0, left: 0 };
   const landscape = viewportSize.width >= viewportSize.height;
-  if (isAndroidDevice && landscape) return { top: 12, right: 34, bottom: 18, left: 34 };
-  if (isAndroidDevice) return { top: 42, right: 10, bottom: 34, left: 10 };
+  if (isAndroidDevice && landscape) return { top: 22, right: 48, bottom: 22, left: 48 };
+  if (isAndroidDevice) return { top: 54, right: 12, bottom: 48, left: 12 };
   if (landscape) return { top: 8, right: 24, bottom: 12, left: 24 };
   return { top: 30, right: 8, bottom: 20, left: 8 };
 }
@@ -235,7 +235,7 @@ onMounted(() => {
   }
   nextTick(observeLayoutBoxes);
   window.addEventListener("resize", updateViewportSize, { passive: true });
-  window.addEventListener("orientationchange", updateViewportSize, { passive: true });
+  window.addEventListener("orientationchange", settleViewportAfterRotation, { passive: true });
   window.visualViewport?.addEventListener("resize", updateViewportSize, { passive: true });
   window.visualViewport?.addEventListener("scroll", updateViewportSize, { passive: true });
   restoreLanSession();
@@ -247,16 +247,24 @@ onBeforeUnmount(() => {
   clearTimeout(toastTimer);
   clearTimeout(lanSyncTimer);
   window.removeEventListener("resize", updateViewportSize);
-  window.removeEventListener("orientationchange", updateViewportSize);
+  window.removeEventListener("orientationchange", settleViewportAfterRotation);
   window.visualViewport?.removeEventListener("resize", updateViewportSize);
   window.visualViewport?.removeEventListener("scroll", updateViewportSize);
 });
 
 function updateViewportSize() {
-  const viewport = window.visualViewport;
-  viewportSize.width = Math.round(viewport?.width || window.innerWidth);
-  viewportSize.height = Math.round(viewport?.height || window.innerHeight);
+  // Android WebView may keep the old visualViewport dimensions for a few
+  // frames after rotation. The layout viewport updates first and is the
+  // reliable source for our full-screen canvas.
+  viewportSize.width = Math.round(document.documentElement.clientWidth || window.innerWidth);
+  viewportSize.height = Math.round(document.documentElement.clientHeight || window.innerHeight);
   requestAnimationFrame(updateLayoutBoxes);
+}
+
+function settleViewportAfterRotation() {
+  updateViewportSize();
+  window.setTimeout(updateViewportSize, 80);
+  window.setTimeout(updateViewportSize, 280);
 }
 
 function updateLayoutBoxes() {
@@ -1054,15 +1062,16 @@ async function generatePdf() {
 </script>
 
 <template>
-  <main class="pro-app" :class="activeTheme">
+  <main class="pro-app" :class="[activeTheme, unlocked ? 'is-main' : 'is-setup']">
     <transition name="toast">
       <div v-if="toast" class="toast-message" :class="toast.type"><i
           :class="toast.type === 'error' ? 'ri-error-warning-line' : 'ri-checkbox-circle-line'"></i>{{ toast.message }}
       </div>
     </transition>
 
-    <section v-if="!unlocked" ref="setupStageRef" class="setup-screen scaled-setup" @click="showSetupEventOptions = false; showThemeOptions = false"
-      :class="isLandscapeLayout ? 'setup-landscape' : 'setup-portrait'" :style="setupStageStyle">
+    <section v-if="!unlocked" ref="setupStageRef" class="setup-stage">
+      <div class="setup-screen scaled-setup" @click="showSetupEventOptions = false; showThemeOptions = false"
+        :class="isLandscapeLayout ? 'setup-landscape' : 'setup-portrait'" :style="setupStageStyle">
       <div class="setup-brand">
         <img src="/assets/gift-cover-front.jpg" alt="礼簿封面" />
         <div><span>GIFT BOOK</span>
@@ -1119,6 +1128,7 @@ async function generatePdf() {
           </details>
           <button class="primary" type="submit">创建并进入</button>
         </form>
+      </div>
       </div>
     </section>
 

@@ -26,10 +26,10 @@ body,
 }
 
 .platform-android {
-  --app-safe-top: max(env(safe-area-inset-top, 0px), 42px);
-  --app-safe-right: max(env(safe-area-inset-right, 0px), 10px);
-  --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), 34px);
-  --app-safe-left: max(env(safe-area-inset-left, 0px), 10px);
+  --app-safe-top: max(env(safe-area-inset-top, 0px), 54px);
+  --app-safe-right: max(env(safe-area-inset-right, 0px), 12px);
+  --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), 48px);
+  --app-safe-left: max(env(safe-area-inset-left, 0px), 12px);
 }
 
 @media (orientation: landscape) {
@@ -41,10 +41,10 @@ body,
   }
 
   .platform-android {
-    --app-safe-top: max(env(safe-area-inset-top, 0px), 12px);
-    --app-safe-right: max(env(safe-area-inset-right, 0px), 34px);
-    --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), 18px);
-    --app-safe-left: max(env(safe-area-inset-left, 0px), 34px);
+    --app-safe-top: max(env(safe-area-inset-top, 0px), 22px);
+    --app-safe-right: max(env(safe-area-inset-right, 0px), 48px);
+    --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), 22px);
+    --app-safe-left: max(env(safe-area-inset-left, 0px), 48px);
   }
 }
 
@@ -78,12 +78,21 @@ textarea {
   overflow: hidden;
 }
 
-.pro-app:has(.scaled-setup) {
+.pro-app.is-setup {
   align-items: stretch;
   justify-content: stretch;
 }
 
 /* Setup screen ---------------------------------------------------------- */
+.setup-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .setup-screen.scaled-setup {
   position: relative;
   width: 100%;
@@ -96,13 +105,14 @@ textarea {
 }
 
 .setup-screen.scaled-setup.setup-landscape {
-  position: relative;
-  inset: auto;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: var(--setup-layout-width);
+  height: var(--setup-layout-height);
   display: grid;
   grid-template-columns: minmax(260px, 34%) minmax(0, 1fr);
-  transform: none;
+  transform: scale(var(--setup-layout-scale));
+  transform-origin: top left;
 }
 
 .setup-landscape .setup-brand,
@@ -120,9 +130,8 @@ textarea {
 .setup-landscape .setup-card {
   justify-content: center;
   max-width: none;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 3.2cqw 4cqw;
-  scrollbar-width: thin;
 }
 
 .setup-landscape .setup-title {
@@ -245,7 +254,7 @@ textarea {
 }
 
 /* Main screen ----------------------------------------------------------- */
-.pro-app:has(.main-stage) {
+.pro-app.is-main {
   display: block;
   padding:
     calc(clamp(10px, 2vw, 28px) + var(--app-safe-top))
@@ -556,10 +565,14 @@ textarea {
   }
 
   .scaled-portrait .book-frame {
-    height: min(124vw, calc(100dvh - var(--app-safe-top) - var(--app-safe-bottom) - 34px));
-    min-height: 0;
+    height: clamp(620px, 150vw, 820px);
+    min-height: 620px;
     padding-bottom: clamp(8px, 2vw, 12px);
     overflow: hidden;
+  }
+
+  .scaled-portrait .ledger-scroll {
+    min-height: 480px;
   }
 
   .scaled-portrait .gift-column {
@@ -586,7 +599,7 @@ textarea {
 
   .scaled-portrait .type-cell {
     writing-mode: horizontal-tb;
-    font-size: clamp(8px, 2.35vw, 10px);
+    font-size: clamp(10px, 2.7vw, 13px);
     line-height: 1.1;
     letter-spacing: -0.05em;
     white-space: nowrap;
@@ -595,7 +608,7 @@ textarea {
   .scaled-portrait .amount-cell b {
     max-height: calc(100% - 38px);
     overflow: hidden;
-    font-size: clamp(10px, 3vw, 14px);
+    font-size: clamp(11px, 3.2vw, 15px);
     line-height: 1.06;
     letter-spacing: 0.01em;
   }
@@ -610,7 +623,7 @@ textarea {
     writing-mode: vertical-rl;
     text-orientation: mixed;
     line-height: 1;
-    font-size: clamp(10px, 2.8vw, 13px);
+    font-size: clamp(11px, 3vw, 14px);
     font-weight: 800;
     white-space: nowrap;
   }
