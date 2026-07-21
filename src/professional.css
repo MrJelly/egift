@@ -563,7 +563,7 @@ button:disabled {
     border-radius: 7px
 }
 
-.tools>button:not(.primary) {
+.tools>button:not(.primary):not(.tools-toggle) {
     border: 1px solid var(--accent);
     background: #fff;
     color: var(--accent)
@@ -579,8 +579,9 @@ button:disabled {
 
 .search button {
     position: absolute;
-    top: 3px;
-    right: 3px;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 10px;
     display: grid;
     place-items: center;
     width: 38px;
@@ -761,6 +762,7 @@ button:disabled {
     grid-template-rows: minmax(0, 1fr) 15% minmax(0, 1fr);
     min-width: 0;
     height: 100%;
+    overflow: hidden;
     padding: 0;
     border: 0;
     background: transparent;
@@ -782,6 +784,7 @@ button:disabled {
     align-items: center;
     justify-content: center;
     min-width: 0;
+    overflow: hidden;
     border-right: 1px solid var(--line);
     border-bottom: 1px solid var(--line)
 }
@@ -821,7 +824,8 @@ button:disabled {
 }
 
 .amount-cell {
-    flex-direction: column
+    flex-direction: column;
+    overflow: hidden
 }
 
 .amount-cell b {
@@ -833,6 +837,7 @@ button:disabled {
     bottom: 7px;
     left: 0;
     width: 100%;
+    max-width: 100%;
     color: #59616c;
     text-align: center;
     font-size: 9px
@@ -1780,7 +1785,6 @@ button:disabled {
     }
 
     .search button {
-        top: 2px;
         width: 32px;
         height: 32px
     }
@@ -2140,7 +2144,6 @@ button:disabled {
     }
 
     .search button {
-        top: 1px;
         width: 29px;
         height: 29px;
         font-size: 15px

@@ -4,7 +4,7 @@ import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import QRCode from "qrcode";
-import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import {
   amountToChinese,
   downloadBlob,
@@ -65,6 +65,7 @@ const toast = ref(null);
 let toastTimer;
 let syncChannel;
 let lanSyncTimer;
+let layoutResizeObserver;
 
 const createForm = reactive({
   name: "",
@@ -97,11 +98,22 @@ const viewportSize = reactive({
   width: window.innerWidth,
   height: window.innerHeight,
 });
+const mainStageRef = ref(null);
+const setupStageRef = ref(null);
+const mainStageBox = reactive({ width: 0, height: 0 });
+const setupStageBox = reactive({ width: 0, height: 0 });
 const isIPadLikeViewport = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+const isAndroidDevice = /Android/i.test(navigator.userAgent);
 const hasMobileSafeAreaFallback =
   /Android|iPhone|iPad|iPod|HarmonyOS|OpenHarmony|Mobile/i.test(navigator.userAgent) || isIPadLikeViewport;
-const safeAreaFallbackTop = hasMobileSafeAreaFallback ? 30 : 0;
-const safeAreaFallbackBottom = hasMobileSafeAreaFallback ? 18 : 0;
+function fallbackSafeInsets() {
+  if (!hasMobileSafeAreaFallback) return { top: 0, right: 0, bottom: 0, left: 0 };
+  const landscape = viewportSize.width >= viewportSize.height;
+  if (isAndroidDevice && landscape) return { top: 12, right: 34, bottom: 18, left: 34 };
+  if (isAndroidDevice) return { top: 42, right: 10, bottom: 34, left: 10 };
+  if (landscape) return { top: 8, right: 24, bottom: 12, left: 24 };
+  return { top: 30, right: 8, bottom: 20, left: 8 };
+}
 
 const currentEvent = computed(() => events.value.find((event) => event.id === activeId.value));
 const selectedEventLabel = computed(() => currentEvent.value?.name || "请选择一个事项");
@@ -118,8 +130,11 @@ const mainStageStyle = computed(() => {
   }
 
   const stagePadding = Math.min(28, Math.max(10, viewportSize.width * 0.02));
-  const availableWidth = Math.max(1, viewportSize.width - stagePadding * 2);
-  const availableHeight = Math.max(1, viewportSize.height - safeAreaFallbackTop - safeAreaFallbackBottom - stagePadding * 2);
+  const insets = fallbackSafeInsets();
+  const fallbackWidth = Math.max(1, viewportSize.width - insets.left - insets.right - stagePadding * 2);
+  const fallbackHeight = Math.max(1, viewportSize.height - insets.top - insets.bottom - stagePadding * 2);
+  const availableWidth = Math.max(1, mainStageBox.width || fallbackWidth);
+  const availableHeight = Math.max(1, mainStageBox.height || fallbackHeight);
   const scale = Math.max(0.1, availableHeight / 700);
   const designWidth = availableWidth / scale;
   return {
@@ -137,8 +152,9 @@ const setupStageStyle = computed(() => {
     };
   }
 
-  const availableWidth = Math.max(1, viewportSize.width);
-  const availableHeight = Math.max(1, viewportSize.height - safeAreaFallbackTop - safeAreaFallbackBottom);
+  const insets = fallbackSafeInsets();
+  const availableWidth = Math.max(1, setupStageBox.width || viewportSize.width - insets.left - insets.right);
+  const availableHeight = Math.max(1, setupStageBox.height || viewportSize.height - insets.top - insets.bottom);
   const scale = Math.max(0.1, availableHeight / 650);
   const designWidth = availableWidth / scale;
   return {
@@ -204,6 +220,7 @@ watch(filteredRecords, () => {
   page.value = Math.min(page.value, pageCount.value);
 });
 watch(activeId, syncLanScreen);
+watch([unlocked, isLandscapeLayout], () => nextTick(observeLayoutBoxes));
 
 onMounted(() => {
   if ("BroadcastChannel" in window) {
@@ -213,6 +230,10 @@ onMounted(() => {
     };
   }
   updateViewportSize();
+  if (typeof ResizeObserver !== "undefined") {
+    layoutResizeObserver = new ResizeObserver(updateLayoutBoxes);
+  }
+  nextTick(observeLayoutBoxes);
   window.addEventListener("resize", updateViewportSize, { passive: true });
   window.addEventListener("orientationchange", updateViewportSize, { passive: true });
   window.visualViewport?.addEventListener("resize", updateViewportSize, { passive: true });
@@ -222,6 +243,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   syncChannel?.close();
+  layoutResizeObserver?.disconnect();
   clearTimeout(toastTimer);
   clearTimeout(lanSyncTimer);
   window.removeEventListener("resize", updateViewportSize);
@@ -234,12 +256,34 @@ function updateViewportSize() {
   const viewport = window.visualViewport;
   viewportSize.width = Math.round(viewport?.width || window.innerWidth);
   viewportSize.height = Math.round(viewport?.height || window.innerHeight);
+  requestAnimationFrame(updateLayoutBoxes);
+}
+
+function updateLayoutBoxes() {
+  const mainRect = mainStageRef.value?.getBoundingClientRect();
+  if (mainRect?.width && mainRect?.height) {
+    mainStageBox.width = Math.round(mainRect.width);
+    mainStageBox.height = Math.round(mainRect.height);
+  }
+  const setupRect = setupStageRef.value?.getBoundingClientRect();
+  if (setupRect?.width && setupRect?.height) {
+    setupStageBox.width = Math.round(setupRect.width);
+    setupStageBox.height = Math.round(setupRect.height);
+  }
+}
+
+function observeLayoutBoxes() {
+  updateLayoutBoxes();
+  if (!layoutResizeObserver || typeof ResizeObserver === "undefined") return;
+  layoutResizeObserver.disconnect();
+  if (mainStageRef.value) layoutResizeObserver.observe(mainStageRef.value);
+  if (setupStageRef.value) layoutResizeObserver.observe(setupStageRef.value);
 }
 
 function normalizeEvent(event) {
   return {
     ...event,
-    id: event.id || crypto.randomUUID(),
+    id: event.id || makeId("event"),
     name: event.name || "未命名事项",
     start: event.start || event.startDateTime || event.createdAt || localDateTime(),
     end: event.end || event.endDateTime || localDateTime(Date.now() + 86400000),
@@ -250,7 +294,7 @@ function normalizeEvent(event) {
     paymentQrCodes: normalizePaymentQrCodes(event.paymentQrCodes || event.paymentQrCode),
     records: (event.records || []).map((record) => ({
       ...record,
-      id: record.id || crypto.randomUUID(),
+      id: record.id || makeId("record"),
       method: record.method || record.type || "现金",
       level: Number(record.level ?? record.guestLevel ?? 0),
       remarks: record.remarks || record.remarkData || { custom: record.remark || "" },
@@ -289,6 +333,11 @@ function localDateTime(value = Date.now()) {
   return date.toISOString().slice(0, 16);
 }
 
+function makeId(prefix = "id") {
+  if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+  return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 function hash(value) {
   return globalThis.CryptoJS?.SHA256(String(value)).toString() || String(value);
 }
@@ -300,12 +349,13 @@ function notify(message, type = "success") {
 }
 
 function createEvent() {
+  try {
   if (new Date(createForm.start) >= new Date(createForm.end)) {
     notify("开始时间必须早于结束时间", "error");
     return;
   }
   const event = normalizeEvent({
-    id: crypto.randomUUID(),
+    id: makeId("event"),
     name: createForm.name.trim(),
     passwordHash: hash(createForm.password),
     start: createForm.start,
@@ -320,7 +370,12 @@ function createEvent() {
   unlocked.value = true;
   showUnlockDialog.value = false;
   resetCreate();
+  nextTick(observeLayoutBoxes);
   notify("事项已创建");
+  } catch (error) {
+    console.error(error);
+    notify("创建失败，请重试", "error");
+  }
 }
 
 function resetCreate() {
@@ -344,6 +399,7 @@ function enterSelectedEvent() {
   }
   unlocked.value = true;
   page.value = 1;
+  nextTick(observeLayoutBoxes);
 }
 
 function confirmUnlock() {
@@ -354,6 +410,7 @@ function confirmUnlock() {
   showUnlockDialog.value = false;
   unlocked.value = true;
   page.value = 1;
+  nextTick(observeLayoutBoxes);
 }
 
 function switchEvent() {
@@ -374,7 +431,7 @@ function addGift() {
 
   const now = new Date().toISOString();
   currentEvent.value.records.push({
-    id: crypto.randomUUID(),
+    id: makeId("record"),
     name,
     amount,
     method: giftForm.method,
@@ -1004,7 +1061,7 @@ async function generatePdf() {
       </div>
     </transition>
 
-    <section v-if="!unlocked" class="setup-screen scaled-setup" @click="showSetupEventOptions = false; showThemeOptions = false"
+    <section v-if="!unlocked" ref="setupStageRef" class="setup-screen scaled-setup" @click="showSetupEventOptions = false; showThemeOptions = false"
       :class="isLandscapeLayout ? 'setup-landscape' : 'setup-portrait'" :style="setupStageStyle">
       <div class="setup-brand">
         <img src="/assets/gift-cover-front.jpg" alt="礼簿封面" />
@@ -1065,7 +1122,7 @@ async function generatePdf() {
       </div>
     </section>
 
-    <section v-else class="main-stage scaled-layout" :class="isLandscapeLayout ? 'scaled-landscape' : 'scaled-portrait'"
+    <section v-else ref="mainStageRef" class="main-stage scaled-layout" :class="isLandscapeLayout ? 'scaled-landscape' : 'scaled-portrait'"
       :style="mainStageStyle">
       <div class="main-screen" @click="showEventMenu = false">
         <header>
