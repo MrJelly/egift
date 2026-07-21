@@ -16,27 +16,12 @@ const viewportSize = reactive({
   width: document.documentElement.clientWidth || window.innerWidth,
   height: document.documentElement.clientHeight || window.innerHeight,
 });
-const isIPadLikeViewport = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
-const isAndroidDevice = /Android/i.test(navigator.userAgent);
-const hasNativeSafeArea = document.documentElement.classList.contains("native-safe-area");
-const hasMobileSafeAreaFallback =
-  /Android|iPhone|iPad|iPod|HarmonyOS|OpenHarmony|Mobile/i.test(navigator.userAgent) || isIPadLikeViewport;
-function fallbackSafeInsets() {
-  if (hasNativeSafeArea) return { top: 0, right: 0, bottom: 0, left: 0 };
-  if (!hasMobileSafeAreaFallback) return { top: 0, right: 0, bottom: 0, left: 0 };
-  const landscape = viewportSize.width >= viewportSize.height;
-  if (isAndroidDevice && landscape) return { top: 22, right: 48, bottom: 22, left: 48 };
-  if (isAndroidDevice) return { top: 54, right: 12, bottom: 48, left: 12 };
-  if (landscape) return { top: 8, right: 24, bottom: 12, left: 24 };
-  return { top: 30, right: 8, bottom: 20, left: 8 };
-}
 
 const isLandscapeLayout = computed(() => viewportSize.width >= viewportSize.height);
 
 const guestStageStyle = computed(() => {
-  const insets = fallbackSafeInsets();
-  const availableWidth = Math.max(1, viewportSize.width - insets.left - insets.right);
-  const availableHeight = Math.max(1, viewportSize.height - insets.top - insets.bottom);
+  const availableWidth = Math.max(1, viewportSize.width);
+  const availableHeight = Math.max(1, viewportSize.height);
   const designWidth = isLandscapeLayout.value ? 1080 : 420;
   const scale = Math.max(0.1, availableWidth / designWidth);
   const designHeight = availableHeight / scale;

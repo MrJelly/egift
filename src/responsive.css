@@ -17,46 +17,6 @@ body,
   --app-safe-left: env(safe-area-inset-left, 0px);
 }
 
-.safe-area-fallback,
-.platform-android {
-  --app-safe-top: max(env(safe-area-inset-top, 0px), 30px);
-  --app-safe-right: max(env(safe-area-inset-right, 0px), 8px);
-  --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), 18px);
-  --app-safe-left: max(env(safe-area-inset-left, 0px), 8px);
-}
-
-.platform-android {
-  --app-safe-top: max(env(safe-area-inset-top, 0px), 54px);
-  --app-safe-right: max(env(safe-area-inset-right, 0px), 12px);
-  --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), 48px);
-  --app-safe-left: max(env(safe-area-inset-left, 0px), 12px);
-}
-
-@media (orientation: landscape) {
-  .safe-area-fallback {
-    --app-safe-top: max(env(safe-area-inset-top, 0px), 8px);
-    --app-safe-right: max(env(safe-area-inset-right, 0px), 24px);
-    --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
-    --app-safe-left: max(env(safe-area-inset-left, 0px), 24px);
-  }
-
-  .platform-android {
-    --app-safe-top: max(env(safe-area-inset-top, 0px), 22px);
-    --app-safe-right: max(env(safe-area-inset-right, 0px), 48px);
-    --app-safe-bottom: max(env(safe-area-inset-bottom, 0px), 22px);
-    --app-safe-left: max(env(safe-area-inset-left, 0px), 48px);
-  }
-}
-
-/* The Tauri Android activity applies exact WindowInsets to the native
-   WebView container. CSS safe-area padding must be zero in that runtime. */
-.platform-android.native-safe-area {
-  --app-safe-top: 0px;
-  --app-safe-right: 0px;
-  --app-safe-bottom: 0px;
-  --app-safe-left: 0px;
-}
-
 html,
 body,
 #app {
