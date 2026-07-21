@@ -144,6 +144,7 @@ textarea {
 
 .pro-app.is-setup.layout-landscape .setup-screen {
   align-items: start;
+  container-type: normal;
 }
 
 .pro-app.is-setup.layout-landscape .setup-card {
@@ -155,11 +156,16 @@ textarea {
 }
 
 .pro-app.is-setup.layout-landscape .setup-brand {
-  position: sticky;
-  top: 0;
+  position: fixed;
+  z-index: 1;
+  top: 8px;
+  left: 8px;
+  width: calc((100vw - 16px) * 0.34);
+  min-width: 260px;
   height: calc(var(--app-height, 100vh) - 16px);
   min-height: 0;
   align-self: start;
+  border-radius: 16px 0 0 16px;
 }
 
 .setup-landscape .setup-title {
