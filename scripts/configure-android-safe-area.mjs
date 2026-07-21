@@ -43,6 +43,10 @@ class MainActivity : TauriActivity() {
     // system-bar and display-cutout insets in every orientation and on every
     // navigation mode instead of guessing those values in CSS.
     WindowCompat.setDecorFitsSystemWindows(window, false)
+    WindowCompat.getInsetsController(window, window.decorView).apply {
+      isAppearanceLightStatusBars = true
+      isAppearanceLightNavigationBars = true
+    }
     val rootView = findViewById<View>(android.R.id.content)
     ViewCompat.setOnApplyWindowInsetsListener(rootView) { view, windowInsets ->
       val safeTypes = WindowInsetsCompat.Type.systemBars() or

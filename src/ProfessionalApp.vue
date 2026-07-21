@@ -98,15 +98,15 @@ const viewportSize = reactive({
   width: document.documentElement.clientWidth || window.innerWidth,
   height: document.documentElement.clientHeight || window.innerHeight,
 });
+const orientationQuery = window.matchMedia("(orientation: landscape)");
+const landscapeViewport = ref(orientationQuery.matches);
 const mainStageRef = ref(null);
-const setupStageRef = ref(null);
 const mainStageBox = reactive({ width: 0, height: 0 });
-const setupStageBox = reactive({ width: 0, height: 0 });
 
 const currentEvent = computed(() => events.value.find((event) => event.id === activeId.value));
 const selectedEventLabel = computed(() => currentEvent.value?.name || "请选择一个事项");
 const selectedThemeLabel = computed(() => THEME_OPTIONS.find((theme) => theme.value === createForm.theme)?.label || THEME_OPTIONS[0].label);
-const isLandscapeLayout = computed(() => viewportSize.width >= viewportSize.height);
+const isLandscapeLayout = computed(() => landscapeViewport.value);
 const toolsCollapsible = computed(() => !isLandscapeLayout.value || viewportSize.width <= 1250);
 const mainStageStyle = computed(() => {
   if (!isLandscapeLayout.value) {
@@ -128,25 +128,6 @@ const mainStageStyle = computed(() => {
     "--main-layout-width": `${designWidth}px`,
     "--main-layout-height": "700px",
     "--main-layout-scale": scale.toFixed(4),
-  };
-});
-const setupStageStyle = computed(() => {
-  if (!isLandscapeLayout.value) {
-    return {
-      "--setup-layout-width": "100%",
-      "--setup-layout-height": "100%",
-      "--setup-layout-scale": "1",
-    };
-  }
-
-  const availableWidth = Math.max(1, setupStageBox.width || viewportSize.width);
-  const availableHeight = Math.max(1, setupStageBox.height || viewportSize.height);
-  const scale = Math.max(0.1, availableHeight / 650);
-  const designWidth = availableWidth / scale;
-  return {
-    "--setup-layout-width": `${designWidth}px`,
-    "--setup-layout-height": "650px",
-    "--setup-layout-scale": scale.toFixed(4),
   };
 });
 const guestScreenHref = computed(() => {
@@ -222,6 +203,7 @@ onMounted(() => {
   nextTick(observeLayoutBoxes);
   window.addEventListener("resize", updateViewportSize, { passive: true });
   window.addEventListener("orientationchange", settleViewportAfterRotation, { passive: true });
+  orientationQuery.addEventListener?.("change", settleViewportAfterRotation);
   window.visualViewport?.addEventListener("resize", updateViewportSize, { passive: true });
   window.visualViewport?.addEventListener("scroll", updateViewportSize, { passive: true });
   restoreLanSession();
@@ -234,6 +216,7 @@ onBeforeUnmount(() => {
   clearTimeout(lanSyncTimer);
   window.removeEventListener("resize", updateViewportSize);
   window.removeEventListener("orientationchange", settleViewportAfterRotation);
+  orientationQuery.removeEventListener?.("change", settleViewportAfterRotation);
   window.visualViewport?.removeEventListener("resize", updateViewportSize);
   window.visualViewport?.removeEventListener("scroll", updateViewportSize);
 });
@@ -244,6 +227,7 @@ function updateViewportSize() {
   // reliable source for our full-screen canvas.
   viewportSize.width = Math.round(document.documentElement.clientWidth || window.innerWidth);
   viewportSize.height = Math.round(document.documentElement.clientHeight || window.innerHeight);
+  landscapeViewport.value = orientationQuery.matches;
   requestAnimationFrame(updateLayoutBoxes);
 }
 
@@ -259,11 +243,6 @@ function updateLayoutBoxes() {
     mainStageBox.width = Math.round(mainRect.width);
     mainStageBox.height = Math.round(mainRect.height);
   }
-  const setupRect = setupStageRef.value?.getBoundingClientRect();
-  if (setupRect?.width && setupRect?.height) {
-    setupStageBox.width = Math.round(setupRect.width);
-    setupStageBox.height = Math.round(setupRect.height);
-  }
 }
 
 function observeLayoutBoxes() {
@@ -271,7 +250,6 @@ function observeLayoutBoxes() {
   if (!layoutResizeObserver || typeof ResizeObserver === "undefined") return;
   layoutResizeObserver.disconnect();
   if (mainStageRef.value) layoutResizeObserver.observe(mainStageRef.value);
-  if (setupStageRef.value) layoutResizeObserver.observe(setupStageRef.value);
 }
 
 function normalizeEvent(event) {
@@ -1055,10 +1033,10 @@ async function generatePdf() {
       </div>
     </transition>
 
-    <section v-if="!unlocked" ref="setupStageRef" class="setup-stage"
+    <section v-if="!unlocked" class="setup-stage"
       :class="isLandscapeLayout ? 'stage-landscape' : 'stage-portrait'">
       <div class="setup-screen scaled-setup" @click="showSetupEventOptions = false; showThemeOptions = false"
-        :class="isLandscapeLayout ? 'setup-landscape' : 'setup-portrait'" :style="setupStageStyle">
+        :class="isLandscapeLayout ? 'setup-landscape' : 'setup-portrait'">
       <div class="setup-brand">
         <img src="/assets/gift-cover-front.jpg" alt="礼簿封面" />
         <div><span>GIFT BOOK</span>
