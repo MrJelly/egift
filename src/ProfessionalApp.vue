@@ -1171,13 +1171,13 @@ async function generatePdf() {
             </div>
             <div class="ledger-scroll">
               <div class="ledger-sheet">
-                <button v-for="(record, index) in pageItems" :key="record.id" class="gift-column" type="button"
-                  @click="openRecord(record)"><span class="name-cell"><small>{{ (page - 1) * PAGE_SIZE + index + 1
+                <div v-for="(record, index) in pageItems" :key="record.id" class="gift-column" role="button" tabindex="0"
+                  @click="openRecord(record)" @keydown.enter="openRecord(record)" @keydown.space.prevent="openRecord(record)"><span class="name-cell"><small>{{ (page - 1) * PAGE_SIZE + index + 1
                   }}</small><b>{{ record.name.length === 2 ? `${record.name[0]}　${record.name[1]}` : record.name
                       }}</b><em v-if="remarkText(record)">已备注</em></span><span class="type-cell">{{ currentEvent.theme
                         === 'theme-solemn' ? '礼金' : '贺礼' }}</span><span class="amount-cell"><b>{{
                       amountToChinese(record.amount) }}</b><small>{{ formatMoney(record.amount)
-                      }}</small></span></button>
+                       }}</small></span></div>
                 <div v-for="n in Math.max(0, PAGE_SIZE - pageItems.length)" :key="`empty-${n}`"
                   class="gift-column empty"><span class="name-cell"></span><span class="type-cell">{{ currentEvent.theme
                     === 'theme-solemn' ? '礼金' : '贺礼' }}</span><span class="amount-cell"></span></div>

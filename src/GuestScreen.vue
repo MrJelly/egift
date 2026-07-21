@@ -20,8 +20,8 @@ const viewportSize = reactive({
 const isLandscapeLayout = computed(() => viewportSize.width >= viewportSize.height);
 
 const guestStageStyle = computed(() => {
-  const availableWidth = Math.max(1, viewportSize.width);
-  const availableHeight = Math.max(1, viewportSize.height);
+  const availableWidth = Math.max(1, viewportSize.width - 16);
+  const availableHeight = Math.max(1, viewportSize.height - 16);
   const designWidth = isLandscapeLayout.value ? 1080 : 420;
   const scale = Math.max(0.1, availableWidth / designWidth);
   const designHeight = availableHeight / scale;
