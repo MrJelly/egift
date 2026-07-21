@@ -119,6 +119,9 @@ jobs:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: pnpm tauri android init --ci
 
+      - name: 适配 Android 系统安全区
+        run: pnpm tauri:android:safe-area
+
       - name: 构建可安装 APK
         uses: tauri-apps/tauri-action@v1
         env:

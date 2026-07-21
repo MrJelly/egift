@@ -10,10 +10,14 @@ const userAgent = navigator.userAgent;
 const isIPadLike = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
 const isSafeAreaFallbackDevice =
   /Android|iPhone|iPad|iPod|HarmonyOS|OpenHarmony|Mobile/i.test(userAgent) || isIPadLike;
+const isAndroid = /Android/i.test(userAgent);
+const isTauriRuntime = Boolean(window.__TAURI_INTERNALS__ || window.__TAURI__);
+const hasNativeSafeArea = isAndroid && isTauriRuntime;
 
-if (isSafeAreaFallbackDevice) root.classList.add("safe-area-fallback");
-if (/Android/i.test(userAgent)) root.classList.add("platform-android");
-if (window.__TAURI_INTERNALS__ || window.__TAURI__) root.classList.add("platform-tauri");
+if (isSafeAreaFallbackDevice && !hasNativeSafeArea) root.classList.add("safe-area-fallback");
+if (isAndroid) root.classList.add("platform-android");
+if (isTauriRuntime) root.classList.add("platform-tauri");
+if (hasNativeSafeArea) root.classList.add("native-safe-area");
 
 const isGuestScreen = new URLSearchParams(window.location.search).get("screen") === "guest";
 createApp(isGuestScreen ? GuestScreen : App).mount("#app");

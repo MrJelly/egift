@@ -11,9 +11,10 @@
     "tauri:dev": "tauri dev",
     "tauri:build:win": "tauri build --bundles nsis",
     "tauri:android:init": "tauri android init",
-    "tauri:android:dev": "tauri android dev",
-    "tauri:build:apk": "tauri android build --apk",
-    "tauri:build:apk:debug": "tauri android build --apk --debug --target aarch64"
+    "tauri:android:safe-area": "node scripts/configure-android-safe-area.mjs",
+    "tauri:android:dev": "pnpm tauri:android:safe-area && tauri android dev",
+    "tauri:build:apk": "pnpm tauri:android:safe-area && tauri android build --apk",
+    "tauri:build:apk:debug": "pnpm tauri:android:safe-area && tauri android build --apk --debug --target aarch64"
   },
   "dependencies": {
     "@tauri-apps/api": "2.11.1",

@@ -104,9 +104,11 @@ const mainStageBox = reactive({ width: 0, height: 0 });
 const setupStageBox = reactive({ width: 0, height: 0 });
 const isIPadLikeViewport = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
 const isAndroidDevice = /Android/i.test(navigator.userAgent);
+const hasNativeSafeArea = document.documentElement.classList.contains("native-safe-area");
 const hasMobileSafeAreaFallback =
   /Android|iPhone|iPad|iPod|HarmonyOS|OpenHarmony|Mobile/i.test(navigator.userAgent) || isIPadLikeViewport;
 function fallbackSafeInsets() {
+  if (hasNativeSafeArea) return { top: 0, right: 0, bottom: 0, left: 0 };
   if (!hasMobileSafeAreaFallback) return { top: 0, right: 0, bottom: 0, left: 0 };
   const landscape = viewportSize.width >= viewportSize.height;
   if (isAndroidDevice && landscape) return { top: 22, right: 48, bottom: 22, left: 48 };
@@ -1069,7 +1071,8 @@ async function generatePdf() {
       </div>
     </transition>
 
-    <section v-if="!unlocked" ref="setupStageRef" class="setup-stage">
+    <section v-if="!unlocked" ref="setupStageRef" class="setup-stage"
+      :class="isLandscapeLayout ? 'stage-landscape' : 'stage-portrait'">
       <div class="setup-screen scaled-setup" @click="showSetupEventOptions = false; showThemeOptions = false"
         :class="isLandscapeLayout ? 'setup-landscape' : 'setup-portrait'" :style="setupStageStyle">
       <div class="setup-brand">
